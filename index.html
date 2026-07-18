@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gohvio Sign</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=DM+Sans:wght@300;400;500&family=Dancing+Script:wght@600&family=Great+Vibes&family=Pacifico&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --teal: #0D7377; --coral: #FF6B6B; --dark: #0F1117; --light: #F9F8F6;
+    --border: #ddd8d0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(--dark); }
+  header {
+    background: var(--dark); color: #fff; padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  header h1 { font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; }
+  header h1 span { color: var(--teal); }
+  header .mode-badge {
+    background: var(--teal); color: #fff; font-size: 12px; padding: 4px 10px;
+    border-radius: 20px; font-weight: 500;
+  }
+  header .spacer { flex: 1; }
+  .btn {
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+    padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-coral { background: var(--coral); color: #fff; }
+  .btn-ghost { background: transparent; color: var(--dark); border: 1px solid var(--border); }
+  header .btn-ghost { color: #fff; border-color: rgba(255,255,255,.45); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* Upload screen */
+  #uploadScreen {
+    max-width: 560px; margin: 60px auto; text-align: center; padding: 0 20px;
+  }
+  #uploadScreen h2 { font-family: 'Poppins', sans-serif; font-size: 26px; margin-bottom: 8px; }
+  #uploadScreen p { color: #666; margin-bottom: 24px; }
+  #dropZone {
+    border: 2px dashed var(--teal); border-radius: 16px; padding: 60px 20px;
+    background: #fff; cursor: pointer;
+  }
+  #dropZone.drag { background: #e6f2f2; }
+  #dropZone .big { font-size: 40px; margin-bottom: 10px; }
+
+  /* Workspace layout */
+  #workspace { display: none; }
+  #toolbar {
+    background: #fff; border-bottom: 1px solid var(--border); padding: 10px 24px;
+    display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 50;
+    flex-wrap: wrap;
+  }
+  #toolbar .hint { font-size: 13px; color: #888; }
+  .palette-item {
+    background: #fff; border: 1.5px solid var(--teal); color: var(--teal);
+    padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+    cursor: grab; user-select: none;
+  }
+  .palette-item:active { cursor: grabbing; }
+  #pages { padding: 30px 10px 120px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+  .page-wrap {
+    position: relative; box-shadow: 0 4px 24px rgba(0,0,0,.12); background: #fff;
+  }
+  .page-wrap canvas { display: block; }
+
+  /* Fields */
+  .field {
+    position: absolute; border: 1.5px dashed var(--teal); border-radius: 4px;
+    background: rgba(13,115,119,.08); display: flex; align-items: center;
+    font-size: 13px; color: var(--teal); overflow: hidden;
+  }
+  .field .label { padding: 0 8px; pointer-events: none; white-space: nowrap; font-weight: 500; }
+  .field.sig-field { border-color: var(--coral); color: var(--coral); background: rgba(255,107,107,.08); }
+  /* prep mode: draggable */
+  body.prep .field { cursor: move; }
+  .field .del {
+    position: absolute; top: -10px; right: -10px; width: 20px; height: 20px;
+    background: var(--coral); color: #fff; border-radius: 50%; font-size: 12px;
+    line-height: 20px; text-align: center; cursor: pointer; display: none;
+  }
+  body.prep .field:hover .del { display: block; }
+  .field .resizer {
+    position: absolute; right: -6px; bottom: -6px; width: 12px; height: 12px;
+    background: var(--teal); border-radius: 50%; cursor: nwse-resize; display: none;
+  }
+  body.prep .field:hover .resizer { display: block; }
+  /* sign mode: clickable */
+  body.sign .field { cursor: pointer; }
+  body.sign .field:hover { background: rgba(13,115,119,.18); }
+  body.sign .field.sig-field:hover { background: rgba(255,107,107,.18); }
+  .field input {
+    width: 100%; height: 100%; border: none; background: transparent;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--dark);
+    padding: 0 8px; outline: none;
+  }
+  .field img.sig-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .field.filled { border-style: solid; background: rgba(255,255,255,.6); }
+
+  /* Signer badge (multi-signer) */
+  .sbadge {
+    position: absolute; top: -11px; left: -6px; font-size: 10px; font-weight: 600;
+    color: #fff; background: var(--teal); border-radius: 10px; padding: 1px 8px;
+    cursor: pointer; z-index: 5; user-select: none; white-space: nowrap;
+  }
+  .sbadge.s2 { background: #5C4AE4; }
+  .sbadge.s3 { background: #F4A825; }
+  .sbadge.s4 { background: var(--coral); }
+  body.sign .sbadge { cursor: default; }
+  /* locked fields (another signer's blocks, sign mode) */
+  body.sign .field.locked {
+    cursor: default; border-style: solid; border-color: #c9c4bb;
+    color: #999; background: rgba(0,0,0,.03);
+  }
+  body.sign .field.locked:hover { background: rgba(0,0,0,.03); }
+  .field .lockedText {
+    padding: 0 8px; color: #333; font-size: 13px; white-space: nowrap;
+    overflow: hidden; pointer-events: none;
+  }
+  #signerSelect {
+    font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 7px 10px;
+    border: 1.5px solid var(--border); border-radius: 8px; background: #fff; cursor: pointer;
+  }
+  .signer-row { margin-bottom: 4px; }
+  .signer-row label { font-size: 13px; color: #666; }
+  .signer-row input {
+    width: 100%; padding: 11px; font-size: 15px; border: 1px solid var(--border);
+    border-radius: 8px; margin: 4px 0 10px; font-family: 'DM Sans', sans-serif;
+  }
+
+  /* Signature modal */
+  #modalOverlay {
+    position: fixed; inset: 0; background: rgba(15,17,23,.6); z-index: 100;
+    display: none; align-items: center; justify-content: center;
+  }
+  #modalOverlay.open { display: flex; }
+  #sigModal {
+    background: #fff; border-radius: 16px; padding: 24px; width: 560px; max-width: 94vw;
+  }
+  #sigModal h3 { font-family: 'Poppins', sans-serif; margin-bottom: 14px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab {
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+    cursor: pointer; font-size: 14px; background: #fff;
+  }
+  .tab.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+  #typePane input {
+    width: 100%; padding: 12px; font-size: 16px; border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 14px; font-family: 'DM Sans', sans-serif;
+  }
+  .font-option {
+    border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 14px;
+    font-size: 30px; margin-bottom: 10px; cursor: pointer; min-height: 54px;
+    display: flex; align-items: center; color: var(--dark);
+  }
+  .font-option.selected { border-color: var(--teal); background: #e6f2f2; }
+  #drawPane canvas {
+    border: 1px solid var(--border); border-radius: 8px; width: 100%; touch-action: none;
+    cursor: crosshair; background: #fff;
+  }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+
+  /* Bottom bar (sign mode) */
+  #signBar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+    border-top: 1px solid var(--border); padding: 12px 24px; display: none;
+    align-items: center; gap: 14px; z-index: 60;
+  }
+  body.sign #signBar { display: flex; }
+  #signBar .progress { font-size: 14px; color: #666; flex: 1; }
+
+  #toast {
+    position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+    background: var(--dark); color: #fff; padding: 10px 20px; border-radius: 8px;
+    font-size: 14px; z-index: 200; display: none;
+  }
+  #busy {
+    position: fixed; inset: 0; background: rgba(249,248,246,.85); z-index: 300;
+    display: none; align-items: center; justify-content: center;
+    font-family: 'Poppins', sans-serif; font-size: 18px; color: var(--teal);
+  }
+</style>
+</head>
+<body>
+<script id="embedSlot">/*GOHVIO_EMBED_SLOT*/</script>
+
+<header>
+  <h1>Gohvio <span>Sign</span></h1>
+  <span class="mode-badge" id="modeBadge">Prepare</span>
+  <div class="spacer"></div>
+  <button class="btn btn-ghost" id="btnRestart" style="display:none">Start over</button>
+  <button class="btn btn-ghost" id="btnGenerate" style="display:none">Download signing file</button>
+  <button class="btn btn-primary" id="btnOpenSend" style="display:none">Send for signature &rarr;</button>
+</header>
+
+<div id="uploadScreen">
+  <h2>Send a document for signature</h2>
+  <p>Upload a PDF or Word document, place the blocks your signer needs to fill, then download a signing file to email them.</p>
+  <div id="dropZone">
+    <div class="big">&#128196;</div>
+    <strong>Click to choose a file</strong> or drag it here<br>
+    <span style="color:#888;font-size:13px">PDF or .docx</span>
+  </div>
+  <input type="file" id="fileInput" accept=".pdf,.docx" style="display:none">
+</div>
+
+<div id="workspace">
+  <div id="toolbar">
+    <span class="hint" id="toolbarHint">Drag a block onto the document:</span>
+    <div class="palette-item" draggable="true" data-type="text">&#9998; Text</div>
+    <div class="palette-item" draggable="true" data-type="date">&#128197; Date (MM/DD/YYYY)</div>
+    <div class="palette-item" draggable="true" data-type="signature" style="border-color:var(--coral);color:var(--coral)">&#9997;&#65039; Signature</div>
+    <span class="hint" style="margin-left:14px">Blocks are for:</span>
+    <select id="signerSelect" title="New blocks you drop will belong to this signer. Click a block's badge to change it later.">
+      <option value="1">Signer 1</option>
+      <option value="2">Signer 2</option>
+      <option value="3">Signer 3</option>
+      <option value="4">Signer 4</option>
+    </select>
+  </div>
+  <div id="pages"></div>
+</div>
+
+<div id="signBar">
+  <span class="progress" id="signProgress"></span>
+  <button class="btn btn-coral" id="btnFinish">Finish &amp; download signed PDF</button>
+</div>
+
+<div id="modalOverlay">
+  <div id="sigModal">
+    <h3>Add your signature</h3>
+    <div class="tabs">
+      <div class="tab active" data-pane="typePane">Type</div>
+      <div class="tab" data-pane="drawPane">Draw</div>
+    </div>
+    <div id="typePane">
+      <input type="text" id="sigName" placeholder="Type your full name">
+      <div class="font-option selected" data-font="'Dancing Script', cursive">Your signature</div>
+      <div class="font-option" data-font="'Great Vibes', cursive">Your signature</div>
+      <div class="font-option" data-font="'Pacifico', cursive">Your signature</div>
+    </div>
+    <div id="drawPane" style="display:none">
+      <canvas id="drawCanvas" width="1000" height="360"></canvas>
+      <button class="btn btn-ghost" id="btnClearDraw" style="margin-top:10px">Clear</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnSigCancel">Cancel</button>
+      <button class="btn btn-primary" id="btnSigApply">Apply signature</button>
+    </div>
+  </div>
+</div>
+
+<div id="sendOverlay" style="position:fixed;inset:0;background:rgba(15,17,23,.6);z-index:100;display:none;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:480px;max-width:94vw">
+    <h3 style="font-family:'Poppins',sans-serif;margin-bottom:14px">Send for signature</h3>
+    <p id="sendOrderNote" style="display:none;font-size:13px;color:#666;background:#e6f2f2;border-radius:8px;padding:10px 12px;margin-bottom:12px">
+      Signers sign <strong>in order</strong>: Signer 1 gets the email first. When they finish,
+      it's automatically sent to the next signer. Everyone (and you) receives the final signed PDF.
+    </p>
+    <div id="sendSigners"></div>
+    <label style="font-size:13px;color:#666">Personal message (optional, shown to Signer 1)</label>
+    <textarea id="sendMessage" rows="3" placeholder="Hi Jane, here's the advisor agreement we discussed." style="width:100%;padding:11px;font-size:15px;border:1px solid var(--border);border-radius:8px;margin:4px 0 4px;font-family:'DM Sans',sans-serif;resize:vertical"></textarea>
+    <p style="font-size:12px;color:#888;margin:6px 0 0">A copy of every email is BCC'd to you (the key owner).</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnSendCancel">Cancel</button>
+      <button class="btn btn-primary" id="btnSendGo">Send</button>
+    </div>
+  </div>
+</div>
+
+<div id="keyOverlay" style="position:fixed;inset:0;background:rgba(15,17,23,.6);z-index:110;display:none;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:440px;max-width:94vw">
+    <h3 style="font-family:'Poppins',sans-serif;margin-bottom:10px">Sending needs a Gohvio Sign key</h3>
+    <p style="font-size:14px;color:#444;margin-bottom:14px">A key lets Gohvio Sign email your documents for you:
+      signature requests, automatic forwarding between signers, and the final signed PDF delivered to everyone.</p>
+    <a href="https://buy.stripe.com/bJe8wP2rD12GdkY0CY38405" target="_blank" rel="noopener"
+       class="btn btn-primary" style="display:block;text-align:center;text-decoration:none;margin-bottom:8px">Get a key &mdash; $1/month</a>
+    <p style="font-size:12px;color:#888;margin:0 0 16px">Subscribe and your key arrives by email within a minute.
+      $1 is charged automatically each month &mdash; cancel anytime.</p>
+    <label style="font-size:13px;color:#666">Already have a key? Paste it here (one-time setup):</label>
+    <input type="text" id="keyInput" placeholder="gsk_&hellip;" autocomplete="off"
+           style="width:100%;padding:11px;font-size:15px;border:1px solid var(--border);border-radius:8px;margin:4px 0 0;font-family:monospace">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnKeyCancel">Cancel</button>
+      <button class="btn btn-primary" id="btnKeySave">Save key &amp; send</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="busy">Working&hellip;</div>
+
+<script>
+/* ============================================================
+   Gohvio Sign — single-file e-signature tool
+   Prep mode  : Emily uploads a doc, places fields, downloads a
+                self-contained signing HTML file.
+   Sign mode  : the signing file (this same app + embedded data)
+                lets the signer fill fields and download a
+                flattened, signed PDF.
+   ============================================================ */
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// Email backbone (Supabase edge function, sends via Resend as emilygoh@gohvio.io)
+var ESIGN_ENDPOINT = 'https://xaffxerlsieiaqorlelm.supabase.co/functions/v1/esign-send';
+
+function getEsignKey() {
+  return (localStorage.getItem('gohvioEsignKey') || '').trim();
+}
+
+/* No key saved yet: show the key dialog — buy ($1/mo Stripe subscription,
+   opens in a new tab) or paste an existing key. Resolves with the key,
+   or '' if the user cancels. */
+function requestEsignKey() {
+  return new Promise(function (resolve) {
+    var ov = document.getElementById('keyOverlay');
+    var input = document.getElementById('keyInput');
+    input.value = '';
+    ov.style.display = 'flex';
+    try { input.focus(); } catch (e) { /* no-op */ }
+    document.getElementById('btnKeyCancel').onclick = function () {
+      ov.style.display = 'none';
+      resolve('');
+    };
+    document.getElementById('btnKeySave').onclick = function () {
+      var k = input.value.trim();
+      if (!k) { toast('Paste your key first — or click "Get a key" to subscribe.'); return; }
+      localStorage.setItem('gohvioEsignKey', k);
+      ov.style.display = 'none';
+      resolve(k);
+    };
+  });
+}
+
+async function callEsign(payload) {
+  var res = await fetch(ESIGN_ENDPOINT, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  var data = await res.json().catch(function () { return {}; });
+  if (!res.ok) {
+    var msg = data.error || ('HTTP ' + res.status);
+    var detail = data.detail || data.signer || data.emily;
+    if (detail) msg += ' — ' + JSON.stringify(detail).slice(0, 300);
+    throw new Error(msg);
+  }
+  return data;
+}
+
+// Captured pristine source of this page, used to generate the signing file.
+var PRISTINE_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+var state = {
+  mode: 'prep',            // 'prep' | 'sign'
+  pdfBase64: null,         // base64 of the underlying PDF
+  docName: 'document',
+  fields: [],              // {id, type, page, x, y, w, h, signer}  (fractions of page size; signer is 1-based)
+  values: {},              // sign mode: id -> {text} | {sigDataUrl}
+  signers: [],             // [{email, name}] in signing order
+  signerIndex: 0,          // sign mode: whose turn (0-based index into signers)
+  pageDims: [],            // [{w,h}] display px per page
+  fieldSeq: 1
+};
+
+// True when this field belongs to whoever is signing right now.
+function isMyField(f) {
+  if (state.mode !== 'sign' || state.signers.length < 2) return true;
+  return (f.signer || 1) === state.signerIndex + 1;
+}
+function signerLabel(n) {  // n is 1-based
+  var s = state.signers[n - 1];
+  return (s && (s.name || s.email)) || ('Signer ' + n);
+}
+
+// ---------- boot ----------
+window.addEventListener('DOMContentLoaded', function () {
+  var embedded = window.GOHVIO_DOC;
+  if (embedded) {
+    state.mode = 'sign';
+    state.pdfBase64 = embedded.pdf;
+    state.docName = embedded.name;
+    state.fields = embedded.fields;
+    state.signers = embedded.signers ||
+      (embedded.signerEmail ? [{ email: embedded.signerEmail, name: embedded.signerName || '' }] : []);
+    state.signerIndex = embedded.signerIndex || 0;
+    if (embedded.values) state.values = embedded.values;
+    document.body.classList.add('sign');
+    var multi = state.signers.length > 1;
+    document.getElementById('modeBadge').textContent = multi
+      ? 'Sign — you are signer ' + (state.signerIndex + 1) + ' of ' + state.signers.length
+      : 'Sign';
+    if (multi && state.signerIndex < state.signers.length - 1) {
+      document.getElementById('btnFinish').innerHTML = 'Finish &amp; send to next signer';
+    }
+    document.getElementById('uploadScreen').style.display = 'none';
+    document.getElementById('toolbar').style.display = 'none';
+    document.getElementById('workspace').style.display = 'block';
+    renderPdf().then(updateProgress);
+  } else {
+    document.body.classList.add('prep');
+    setupUpload();
+  }
+  setupPalette();
+  setupModal();
+  document.getElementById('btnGenerate').addEventListener('click', generateSigningFile);
+  document.getElementById('btnFinish').addEventListener('click', finishAndDownload);
+  document.getElementById('btnRestart').addEventListener('click', function () { location.reload(); });
+  document.getElementById('btnOpenSend').addEventListener('click', openSendModal);
+  document.getElementById('btnSendGo').addEventListener('click', sendForSignature);
+  document.getElementById('btnSendCancel').addEventListener('click', function () {
+    document.getElementById('sendOverlay').style.display = 'none';
+  });
+});
+
+// ---------- helpers ----------
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._h); t._h = setTimeout(function () { t.style.display = 'none'; }, 8000);
+}
+function busy(on) { document.getElementById('busy').style.display = on ? 'flex' : 'none'; }
+function b64ToBytes(b64) {
+  var bin = atob(b64), arr = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+function bytesToB64(bytes) {
+  var bin = '', chunk = 0x8000;
+  for (var i = 0; i < bytes.length; i += chunk)
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  return btoa(bin);
+}
+function downloadBlob(blob, name) {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+}
+
+// ---------- upload (prep) ----------
+function setupUpload() {
+  var dz = document.getElementById('dropZone');
+  var fi = document.getElementById('fileInput');
+  dz.addEventListener('click', function () { fi.click(); });
+  dz.addEventListener('dragover', function (e) { e.preventDefault(); dz.classList.add('drag'); });
+  dz.addEventListener('dragleave', function () { dz.classList.remove('drag'); });
+  dz.addEventListener('drop', function (e) {
+    e.preventDefault(); dz.classList.remove('drag');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+  fi.addEventListener('change', function () { if (fi.files.length) handleFile(fi.files[0]); });
+}
+
+async function handleFile(file) {
+  busy(true);
+  try {
+    state.docName = file.name.replace(/\.(pdf|docx)$/i, '');
+    var buf = await file.arrayBuffer();
+    if (/\.docx$/i.test(file.name)) {
+      state.pdfBase64 = await docxToPdfBase64(buf);
+    } else {
+      state.pdfBase64 = bytesToB64(new Uint8Array(buf));
+    }
+    document.getElementById('uploadScreen').style.display = 'none';
+    document.getElementById('workspace').style.display = 'block';
+    document.getElementById('btnGenerate').style.display = 'inline-block';
+    document.getElementById('btnOpenSend').style.display = 'inline-block';
+    document.getElementById('btnRestart').style.display = 'inline-block';
+    await renderPdf();
+  } catch (err) {
+    console.error(err);
+    toast('Could not read that file: ' + err.message);
+  } finally { busy(false); }
+}
+
+// Convert .docx -> HTML (mammoth) -> paginated page divs (break BETWEEN
+// paragraphs, never through a line of text) -> page images -> PDF.
+async function docxToPdfBase64(arrayBuffer) {
+  var result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
+  var baseCss = 'width:816px;padding:72px;background:#fff;' +
+    'font-family:Georgia,serif;font-size:15px;line-height:1.55;color:#111;';
+
+  // Measure each top-level element's height at page width.
+  var measure = document.createElement('div');
+  measure.style.cssText = 'position:absolute;left:-10000px;top:0;' + baseCss;
+  measure.innerHTML = result.value || '<p>(empty document)</p>';
+  document.body.appendChild(measure);
+
+  var contentH = 1056 - 144; // US Letter @96dpi minus 72px top/bottom margins
+  var pagesEls = [[]];       // elements per page
+  var used = 0;
+  var kids = Array.prototype.slice.call(measure.children);
+  kids.forEach(function (el) {
+    var style = getComputedStyle(el);
+    var h = el.offsetHeight + parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+    if (used > 0 && used + h > contentH) { pagesEls.push([]); used = 0; }
+    pagesEls[pagesEls.length - 1].push(el);
+    used += h;
+  });
+  document.body.removeChild(measure);
+
+  var pdfDoc = await PDFLib.PDFDocument.create();
+  for (var p = 0; p < pagesEls.length; p++) {
+    var pageDiv = document.createElement('div');
+    pageDiv.style.cssText = 'position:absolute;left:-10000px;top:0;height:1056px;overflow:hidden;' + baseCss;
+    pagesEls[p].forEach(function (el) { pageDiv.appendChild(el); });
+    document.body.appendChild(pageDiv);
+    var canvas = await html2canvas(pageDiv, { scale: 2, backgroundColor: '#ffffff' });
+    document.body.removeChild(pageDiv);
+    var png = await pdfDoc.embedPng(canvas.toDataURL('image/png'));
+    var page = pdfDoc.addPage([612, 792]); // US Letter in points
+    page.drawImage(png, { x: 0, y: 0, width: 612, height: 792 });
+  }
+  return bytesToB64(await pdfDoc.save());
+}
+
+// ---------- render PDF pages ----------
+async function renderPdf() {
+  var container = document.getElementById('pages');
+  container.innerHTML = '';
+  state.pageDims = [];
+  var pdf = await pdfjsLib.getDocument({ data: b64ToBytes(state.pdfBase64) }).promise;
+  var displayW = Math.min(860, window.innerWidth - 40);
+  for (var i = 1; i <= pdf.numPages; i++) {
+    var page = await pdf.getPage(i);
+    var vp1 = page.getViewport({ scale: 1 });
+    var scale = displayW / vp1.width;
+    var displayH = vp1.height * scale;
+    // Render at 2x for sharpness, but stay under browser canvas limits
+    // (Safari caps canvas area ~16.7M px and dimensions ~8192px).
+    var quality = 2;
+    var maxArea = 12000000, maxDim = 8000;
+    while (quality > 0.5 &&
+           ((displayW * quality) * (displayH * quality) > maxArea ||
+            displayH * quality > maxDim || displayW * quality > maxDim)) {
+      quality -= 0.25;
+    }
+    var vp = page.getViewport({ scale: scale * quality });
+    var canvas = document.createElement('canvas');
+    canvas.width = Math.floor(vp.width); canvas.height = Math.floor(vp.height);
+    canvas.style.width = displayW + 'px';
+    canvas.style.height = displayH + 'px';
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+
+    var wrap = document.createElement('div');
+    wrap.className = 'page-wrap';
+    wrap.dataset.page = i - 1;
+    wrap.style.width = displayW + 'px';
+    wrap.style.height = displayH + 'px';
+    wrap.appendChild(canvas);
+    container.appendChild(wrap);
+    state.pageDims.push({ w: displayW, h: displayH });
+
+    if (state.mode === 'prep') enableDropOnPage(wrap);
+  }
+  // draw existing fields (sign mode)
+  state.fields.forEach(function (f) { mountField(f); });
+}
+
+// ---------- field placement (prep) ----------
+function setupPalette() {
+  document.querySelectorAll('.palette-item').forEach(function (el) {
+    el.addEventListener('dragstart', function (e) {
+      e.dataTransfer.setData('text/plain', el.dataset.type);
+    });
+  });
+}
+
+function enableDropOnPage(wrap) {
+  wrap.addEventListener('dragover', function (e) { e.preventDefault(); });
+  wrap.addEventListener('drop', function (e) {
+    e.preventDefault();
+    var type = e.dataTransfer.getData('text/plain');
+    if (!type) return;
+    var rect = wrap.getBoundingClientRect();
+    var pageIdx = parseInt(wrap.dataset.page, 10);
+    var dims = state.pageDims[pageIdx];
+    var defaults = { text: [180, 34], date: [140, 34], signature: [220, 60] };
+    var d = defaults[type];
+    var f = {
+      id: 'f' + (state.fieldSeq++),
+      type: type,
+      page: pageIdx,
+      x: Math.max(0, (e.clientX - rect.left - d[0] / 2)) / dims.w,
+      y: Math.max(0, (e.clientY - rect.top - d[1] / 2)) / dims.h,
+      w: d[0] / dims.w,
+      h: d[1] / dims.h,
+      signer: parseInt(document.getElementById('signerSelect').value, 10) || 1
+    };
+    state.fields.push(f);
+    mountField(f);
+  });
+}
+
+function fieldLabel(type) {
+  return type === 'text' ? 'Text' : type === 'date' ? 'Date MM/DD/YYYY' : 'Sign here';
+}
+
+function mountField(f) {
+  var wrap = document.querySelector('.page-wrap[data-page="' + f.page + '"]');
+  if (!wrap) return;
+  var dims = state.pageDims[f.page];
+  var el = document.createElement('div');
+  el.className = 'field' + (f.type === 'signature' ? ' sig-field' : '');
+  el.dataset.id = f.id;
+  el.style.left = (f.x * dims.w) + 'px';
+  el.style.top = (f.y * dims.h) + 'px';
+  el.style.width = (f.w * dims.w) + 'px';
+  el.style.height = (f.h * dims.h) + 'px';
+  el.innerHTML = '<span class="label">' + fieldLabel(f.type) + '</span>';
+  wrap.appendChild(el);
+
+  if (state.mode === 'prep') {
+    // signer badge — click to cycle Signer 1 → 2 → 3 → 4 → 1
+    var badge = document.createElement('span');
+    badge.className = 'sbadge' + ((f.signer || 1) > 1 ? ' s' + f.signer : '');
+    badge.textContent = 'Signer ' + (f.signer || 1);
+    badge.title = 'Click to change which signer fills this block';
+    badge.addEventListener('click', function (e) {
+      e.stopPropagation();
+      f.signer = ((f.signer || 1) % 4) + 1;
+      badge.textContent = 'Signer ' + f.signer;
+      badge.className = 'sbadge' + (f.signer > 1 ? ' s' + f.signer : '');
+    });
+    el.appendChild(badge);
+    var del = document.createElement('div');
+    del.className = 'del'; del.textContent = '×';
+    del.addEventListener('click', function (e) {
+      e.stopPropagation();
+      state.fields = state.fields.filter(function (x) { return x.id !== f.id; });
+      el.remove();
+    });
+    el.appendChild(del);
+    var rz = document.createElement('div');
+    rz.className = 'resizer';
+    el.appendChild(rz);
+    makeDraggable(el, f, rz);
+  } else {
+    var v = state.values[f.id];
+    if (v && !isMyField(f)) {
+      // already completed by a previous signer — show it, locked
+      el.classList.add('filled', 'locked');
+      el.innerHTML = '';
+      if (v.sigDataUrl) {
+        var img = document.createElement('img');
+        img.className = 'sig-img'; img.src = v.sigDataUrl;
+        el.appendChild(img);
+      } else {
+        var sp = document.createElement('span');
+        sp.className = 'lockedText'; sp.textContent = v.text || '';
+        el.appendChild(sp);
+      }
+    } else if (!isMyField(f)) {
+      // waiting on a later signer — visible but untouchable
+      el.classList.add('locked');
+      el.innerHTML = '';
+      var lbl = document.createElement('span');
+      lbl.className = 'label';
+      lbl.textContent = 'For ' + signerLabel(f.signer || 1);
+      el.appendChild(lbl);
+    } else {
+      el.addEventListener('click', function () { openFieldEditor(f, el); });
+    }
+  }
+}
+
+function makeDraggable(el, f, resizer) {
+  var dims = function () { return state.pageDims[f.page]; };
+  el.addEventListener('pointerdown', function (e) {
+    if (e.target === resizer || e.target.classList.contains('del')) return;
+    e.preventDefault();
+    var startX = e.clientX, startY = e.clientY;
+    var origX = f.x, origY = f.y;
+    function move(ev) {
+      var d = dims();
+      f.x = Math.min(1 - f.w, Math.max(0, origX + (ev.clientX - startX) / d.w));
+      f.y = Math.min(1 - f.h, Math.max(0, origY + (ev.clientY - startY) / d.h));
+      el.style.left = (f.x * d.w) + 'px';
+      el.style.top = (f.y * d.h) + 'px';
+    }
+    function up() { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); }
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  });
+  resizer.addEventListener('pointerdown', function (e) {
+    e.preventDefault(); e.stopPropagation();
+    var startX = e.clientX, startY = e.clientY;
+    var origW = f.w, origH = f.h;
+    function move(ev) {
+      var d = dims();
+      f.w = Math.min(1 - f.x, Math.max(40 / d.w, origW + (ev.clientX - startX) / d.w));
+      f.h = Math.min(1 - f.y, Math.max(22 / d.h, origH + (ev.clientY - startY) / d.h));
+      el.style.width = (f.w * d.w) + 'px';
+      el.style.height = (f.h * d.h) + 'px';
+    }
+    function up() { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); }
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  });
+}
+
+// ---------- generate signing file (prep) ----------
+function buildSigningHtml(extra) {
+  var doc = {
+    name: state.docName,
+    pdf: state.pdfBase64,
+    fields: state.fields
+  };
+  if (extra) for (var k in extra) doc[k] = extra[k];
+  var inject = '<script id="embedSlot">window.GOHVIO_DOC=' +
+    JSON.stringify(doc).replace(/<\//g, '<\\/') + ';<\/script>';
+  // Matches the embed slot whether it holds the pristine marker (prep mode)
+  // or an earlier signer's embedded data (sign mode, forwarding the chain).
+  var slotRe = new RegExp('<script id="embedSlot">[\\s\\S]*?<\\/' + 'script>');
+  if (!slotRe.test(PRISTINE_HTML)) return null;
+  return PRISTINE_HTML.replace(slotRe, function () { return inject; });
+}
+
+function generateSigningFile() {
+  if (!state.fields.length) { toast('Place at least one block first.'); return; }
+  // embed key if already saved (so Finish can email copies); don't prompt here
+  var key = (localStorage.getItem('gohvioEsignKey') || '').trim();
+  var html = buildSigningHtml(key ? { key: key } : null);
+  if (!html) { toast('Internal error: embed slot not found.'); return; }
+  downloadBlob(new Blob([html], { type: 'text/html' }),
+    'SIGN-' + state.docName.replace(/\s+/g, '-') + '.html');
+  toast('Signing file downloaded. Email it to your signer.');
+}
+
+// ---------- send for signature (prep) ----------
+function usedSignerNumbers() {
+  var seen = {};
+  state.fields.forEach(function (f) { seen[f.signer || 1] = true; });
+  return Object.keys(seen).map(Number).sort(function (a, b) { return a - b; });
+}
+
+function openSendModal() {
+  if (!state.fields.length) { toast('Place at least one block first.'); return; }
+  var used = usedSignerNumbers();
+  var box = document.getElementById('sendSigners');
+  box.innerHTML = '';
+  used.forEach(function (n, i) {
+    var row = document.createElement('div');
+    row.className = 'signer-row';
+    row.dataset.signer = n;
+    var who = used.length > 1 ? 'Signer ' + (i + 1) + (i === 0 ? ' (signs first)' : '') : "Signer";
+    var lab1 = document.createElement('label');
+    lab1.textContent = who + " — email";
+    var em = document.createElement('input');
+    em.type = 'email'; em.className = 'sendSignerEmail'; em.placeholder = 'name@company.com';
+    var lab2 = document.createElement('label');
+    lab2.textContent = who + " — name (optional)";
+    var nm = document.createElement('input');
+    nm.type = 'text'; nm.className = 'sendSignerName'; nm.placeholder = 'Jane Smith';
+    row.appendChild(lab1); row.appendChild(em); row.appendChild(lab2); row.appendChild(nm);
+    box.appendChild(row);
+  });
+  document.getElementById('sendOrderNote').style.display = used.length > 1 ? 'block' : 'none';
+  document.getElementById('sendOverlay').style.display = 'flex';
+  setTimeout(function () { var f = box.querySelector('input'); if (f) f.focus(); }, 50);
+}
+
+async function sendForSignature() {
+  var rows = document.querySelectorAll('#sendSigners .signer-row');
+  var signers = [];
+  for (var i = 0; i < rows.length; i++) {
+    var email = rows[i].querySelector('.sendSignerEmail').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast('Enter a valid email address for every signer.'); return;
+    }
+    signers.push({ email: email, name: rows[i].querySelector('.sendSignerName').value.trim() });
+  }
+  if (!signers.length) { toast('No signers found.'); return; }
+  // same person listed twice in a row is almost certainly a mistake
+  for (var d = 1; d < signers.length; d++) {
+    if (signers[d].email === signers[d - 1].email) {
+      toast('Signers ' + d + ' and ' + (d + 1) + ' have the same email.'); return;
+    }
+  }
+  var key = getEsignKey();
+  if (!key) key = await requestEsignKey();
+  if (!key) return; // user cancelled the key dialog
+  // Renumber fields so signer numbers are 1..N in signing order
+  // (e.g. if only Signer 1 and Signer 3 were used, 3 becomes 2).
+  var used = usedSignerNumbers();
+  var remap = {};
+  used.forEach(function (n, i) { remap[n] = i + 1; });
+  state.fields.forEach(function (f) { f.signer = remap[f.signer || 1]; });
+  var html = buildSigningHtml({
+    key: key,
+    signers: signers,
+    signerIndex: 0,
+    values: {},
+    signerEmail: signers[0].email  // legacy fallback for single-signer flow
+  });
+  if (!html) { toast('Internal error: embed slot not found.'); return; }
+  busy(true);
+  try {
+    await callEsign({
+      action: 'send_request',
+      key: key,
+      signerEmail: signers[0].email,
+      signerName: signers[0].name,
+      message: document.getElementById('sendMessage').value.trim(),
+      docName: state.docName,
+      fileHtmlB64: bytesToB64(new TextEncoder().encode(html))
+    });
+    document.getElementById('sendOverlay').style.display = 'none';
+    toast(signers.length > 1
+      ? 'Sent to ' + signers[0].email + ' (signer 1 of ' + signers.length +
+        '). Each signer is emailed automatically when the previous one finishes.'
+      : 'Sent to ' + signers[0].email + '. A copy is in your inbox (BCC).');
+  } catch (err) {
+    if (/Bad key/i.test(err.message)) localStorage.removeItem('gohvioEsignKey');
+    toast('Send failed: ' + err.message);
+  } finally { busy(false); }
+}
+
+// ---------- sign mode: filling fields ----------
+var activeSigField = null; // {f, el}
+
+function openFieldEditor(f, el) {
+  if (f.type === 'signature') {
+    activeSigField = { f: f, el: el };
+    openSigModal();
+    return;
+  }
+  if (el.querySelector('input')) { el.querySelector('input').focus(); return; }
+  el.innerHTML = '';
+  el.classList.add('filled');
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = f.type === 'date' ? 'MM/DD/YYYY' : 'Type here';
+  if (f.type === 'date') {
+    input.maxLength = 10;
+    input.addEventListener('input', function () {
+      var v = input.value.replace(/[^\d]/g, '').slice(0, 8);
+      if (v.length > 4) v = v.slice(0, 2) + '/' + v.slice(2, 4) + '/' + v.slice(4);
+      else if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
+      input.value = v;
+      state.values[f.id] = { text: v };
+      updateProgress();
+    });
+    // prefill with today on double-click
+    input.title = 'Double-click to insert today’s date';
+    input.addEventListener('dblclick', function () {
+      var d = new Date();
+      input.value = ('0' + (d.getMonth() + 1)).slice(-2) + '/' +
+                    ('0' + d.getDate()).slice(-2) + '/' + d.getFullYear();
+      state.values[f.id] = { text: input.value };
+      updateProgress();
+    });
+  } else {
+    input.addEventListener('input', function () {
+      state.values[f.id] = { text: input.value };
+      updateProgress();
+    });
+  }
+  el.appendChild(input);
+  input.focus();
+}
+
+function fieldComplete(f) {
+  var v = state.values[f.id];
+  if (!v) return false;
+  if (f.type === 'date') return /^\d{2}\/\d{2}\/\d{4}$/.test(v.text || '');
+  if (f.type === 'signature') return !!v.sigDataUrl;
+  return !!(v.text && v.text.trim());
+}
+
+function updateProgress() {
+  var mine = state.fields.filter(isMyField);
+  var done = mine.filter(fieldComplete).length;
+  var p = document.getElementById('signProgress');
+  if (!p) return;
+  var txt = done + ' of ' + mine.length + (state.signers.length > 1 ? ' of your' : '') + ' fields completed';
+  if (state.signers.length > 1 && state.signerIndex < state.signers.length - 1) {
+    txt += ' — next: ' + signerLabel(state.signerIndex + 2);
+  }
+  p.textContent = txt;
+}
+
+// ---------- signature modal ----------
+var drawCtx, drawing = false, drawDirty = false;
+
+function setupModal() {
+  var overlay = document.getElementById('modalOverlay');
+  document.querySelectorAll('.tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      document.getElementById('typePane').style.display = tab.dataset.pane === 'typePane' ? 'block' : 'none';
+      document.getElementById('drawPane').style.display = tab.dataset.pane === 'drawPane' ? 'block' : 'none';
+    });
+  });
+  var nameInput = document.getElementById('sigName');
+  nameInput.addEventListener('input', function () {
+    document.querySelectorAll('.font-option').forEach(function (fo) {
+      fo.textContent = nameInput.value || 'Your signature';
+    });
+  });
+  document.querySelectorAll('.font-option').forEach(function (fo) {
+    fo.style.fontFamily = fo.dataset.font;
+    fo.addEventListener('click', function () {
+      document.querySelectorAll('.font-option').forEach(function (x) { x.classList.remove('selected'); });
+      fo.classList.add('selected');
+    });
+  });
+  var canvas = document.getElementById('drawCanvas');
+  drawCtx = canvas.getContext('2d');
+  drawCtx.lineWidth = 4; drawCtx.lineCap = 'round'; drawCtx.strokeStyle = '#0F1117';
+  function pos(e) {
+    var r = canvas.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * (canvas.width / r.width),
+             y: (e.clientY - r.top) * (canvas.height / r.height) };
+  }
+  canvas.addEventListener('pointerdown', function (e) {
+    drawing = true; drawDirty = true;
+    var p = pos(e); drawCtx.beginPath(); drawCtx.moveTo(p.x, p.y);
+  });
+  canvas.addEventListener('pointermove', function (e) {
+    if (!drawing) return;
+    var p = pos(e); drawCtx.lineTo(p.x, p.y); drawCtx.stroke();
+  });
+  window.addEventListener('pointerup', function () { drawing = false; });
+  document.getElementById('btnClearDraw').addEventListener('click', function () {
+    drawCtx.clearRect(0, 0, canvas.width, canvas.height); drawDirty = false;
+  });
+  document.getElementById('btnSigCancel').addEventListener('click', function () {
+    overlay.classList.remove('open');
+  });
+  document.getElementById('btnSigApply').addEventListener('click', applySignature);
+}
+
+function openSigModal() {
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(function () { document.getElementById('sigName').focus(); }, 50);
+}
+
+function applySignature() {
+  if (!activeSigField) return;
+  var typeVisible = document.getElementById('typePane').style.display !== 'none';
+  var dataUrl;
+  if (typeVisible) {
+    var name = document.getElementById('sigName').value.trim();
+    if (!name) { toast('Type your name first.'); return; }
+    var font = document.querySelector('.font-option.selected').dataset.font;
+    var c = document.createElement('canvas');
+    c.width = 1000; c.height = 300;
+    var ctx = c.getContext('2d');
+    ctx.font = '110px ' + font;
+    ctx.fillStyle = '#0F1117';
+    ctx.textBaseline = 'middle';
+    // shrink to fit
+    var w = ctx.measureText(name).width;
+    if (w > 940) { ctx.font = Math.floor(110 * 940 / w) + 'px ' + font; }
+    ctx.fillText(name, 30, 160);
+    dataUrl = c.toDataURL('image/png');
+  } else {
+    if (!drawDirty) { toast('Draw your signature first.'); return; }
+    dataUrl = document.getElementById('drawCanvas').toDataURL('image/png');
+  }
+  state.values[activeSigField.f.id] = { sigDataUrl: dataUrl };
+  var el = activeSigField.el;
+  el.innerHTML = '';
+  el.classList.add('filled');
+  var img = document.createElement('img');
+  img.className = 'sig-img';
+  img.src = dataUrl;
+  el.appendChild(img);
+  document.getElementById('modalOverlay').classList.remove('open');
+  activeSigField = null;
+  updateProgress();
+}
+
+// ---------- finish: forward to next signer, or flatten to signed PDF ----------
+async function finishAndDownload() {
+  var multi = state.mode === 'sign' && state.signers.length > 1;
+  var isLast = !multi || state.signerIndex >= state.signers.length - 1;
+
+  // validate this signer's own fields (on the last signer, validate everything)
+  var toCheck = isLast ? state.fields : state.fields.filter(isMyField);
+  for (var i = 0; i < toCheck.length; i++) {
+    if (!fieldComplete(toCheck[i])) {
+      toast(toCheck[i].type === 'date'
+        ? 'Please complete all your fields — dates must be MM/DD/YYYY.'
+        : 'Please complete all your fields before finishing.');
+      return;
+    }
+  }
+
+  // Not the last signer: pass the document on instead of making the PDF.
+  if (!isLast) {
+    var embF = window.GOHVIO_DOC || {};
+    var next = state.signers[state.signerIndex + 1];
+    var fwdHtml = buildSigningHtml({
+      key: embF.key,
+      signers: state.signers,
+      signerIndex: state.signerIndex + 1,
+      values: state.values,
+      signerEmail: next.email
+    });
+    if (embF.key && fwdHtml) {
+      busy(true);
+      try {
+        await callEsign({
+          action: 'send_request',
+          key: embF.key,
+          signerEmail: next.email,
+          signerName: next.name || '',
+          message: 'Signer ' + (state.signerIndex + 1) + ' of ' + state.signers.length +
+            ' has completed their part of "' + state.docName + '". You are the next signer.',
+          docName: state.docName,
+          fileHtmlB64: bytesToB64(new TextEncoder().encode(fwdHtml))
+        });
+        toast('Thank you — your part is done! The document was sent to ' + next.email +
+              ' to sign next. You’ll receive the final signed PDF when everyone has finished.');
+      } catch (err) {
+        console.error(err);
+        if (fwdHtml) {
+          downloadBlob(new Blob([fwdHtml], { type: 'text/html' }),
+            'SIGN-' + state.docName.replace(/\s+/g, '-') + '-next-signer.html');
+          toast('Sending failed (' + err.message + '). A signing file was downloaded instead — ' +
+                'please email it to ' + next.email + '.');
+        } else {
+          toast('Sending failed: ' + err.message);
+        }
+      } finally { busy(false); }
+    } else if (fwdHtml) {
+      downloadBlob(new Blob([fwdHtml], { type: 'text/html' }),
+        'SIGN-' + state.docName.replace(/\s+/g, '-') + '-next-signer.html');
+      toast('Your part is done! A signing file was downloaded — please email it to ' +
+            next.email + ' to sign next.');
+    } else {
+      toast('Internal error: could not prepare the file for the next signer.');
+    }
+    return;
+  }
+
+  busy(true);
+  try {
+    var pdfDoc = await PDFLib.PDFDocument.load(b64ToBytes(state.pdfBase64));
+    var helv = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+    var pages = pdfDoc.getPages();
+    for (var j = 0; j < state.fields.length; j++) {
+      var fld = state.fields[j];
+      var val = state.values[fld.id];
+      var page = pages[fld.page];
+      var pw = page.getWidth(), ph = page.getHeight();
+      var x = fld.x * pw, w = fld.w * pw, h = fld.h * ph;
+      var yTop = fld.y * ph;
+      var y = ph - yTop - h; // pdf-lib origin: bottom-left
+      if (fld.type === 'signature') {
+        var png = await pdfDoc.embedPng(val.sigDataUrl);
+        var s = Math.min(w / png.width, h / png.height);
+        var dw = png.width * s, dh = png.height * s;
+        page.drawImage(png, { x: x, y: y + (h - dh) / 2, width: dw, height: dh });
+      } else {
+        var size = Math.min(h * 0.62, 14);
+        page.drawText(val.text, {
+          x: x + 3, y: y + (h - size) / 2 + size * 0.12,
+          size: size, font: helv, color: PDFLib.rgb(0.06, 0.07, 0.09)
+        });
+      }
+    }
+    var bytes = await pdfDoc.save();
+    downloadBlob(new Blob([bytes], { type: 'application/pdf' }),
+      state.docName.replace(/\s+/g, '-') + '-signed.pdf');
+
+    // Auto-email the signed copy to both parties, if this file was sent
+    // through Gohvio Sign (key embedded). Local download above is the fallback.
+    var emb = window.GOHVIO_DOC || {};
+    if (emb.key) {
+      var allEmails = state.signers.map(function (s) { return s.email; }).filter(Boolean);
+      var signerEmail = allEmails[allEmails.length - 1] || emb.signerEmail ||
+        prompt('Enter your email to receive your signed copy:') || '';
+      signerEmail = signerEmail.trim();
+      if (signerEmail) {
+        try {
+          await callEsign({
+            action: 'send_signed',
+            key: emb.key,
+            signerEmail: signerEmail,
+            signerEmails: allEmails.length ? allEmails : [signerEmail],
+            docName: state.docName,
+            pdfB64: bytesToB64(bytes)
+          });
+          toast(allEmails.length > 1
+            ? 'Done! The signed document was emailed to all ' + allEmails.length + ' signers and to Emily.'
+            : 'Done! The signed document was emailed to you and to Emily.');
+          return;
+        } catch (err) {
+          console.error(err);
+          toast('Signed PDF downloaded, but emailing failed (' + err.message +
+                '). Please email the downloaded PDF back to the sender.');
+          return;
+        }
+      }
+    }
+    toast('Signed PDF downloaded. Email it back to the sender.');
+  } catch (err) {
+    console.error(err);
+    toast('Could not create the PDF: ' + err.message);
+  } finally { busy(false); }
+}
+</script>
+</body>
+</html>
