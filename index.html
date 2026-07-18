@@ -55,25 +55,32 @@
   #howItWorks {
     text-align: left; margin-top: 28px; background: #fff;
     border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px;
+    display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap;
   }
+  .hiw-mascot { width: 92px; height: 92px; border-radius: 12px; flex: 0 0 auto; }
+  #howItWorks > div { flex: 1; min-width: 240px; }
   #howItWorks strong.hiw-title { font-family: 'Poppins', sans-serif; font-size: 14px; }
   #howItWorks ol { margin: 10px 0 0 18px; color: #555; font-size: 14px; line-height: 1.9; }
   .sec-item { font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 13px; }
   .sec-item strong { color: var(--dark); }
 
-  /* Step guide (prep mode) */
-  #stepsBar { display: flex; justify-content: center; flex-wrap: wrap; padding: 14px 12px 0; }
+  /* Step banner (prep mode) */
+  #stepsBar {
+    display: flex; justify-content: center; align-items: center; flex-wrap: wrap;
+    padding: 10px 12px 8px; background: #fff; border-bottom: 1px solid var(--border);
+  }
   body.sign #stepsBar { display: none; }
-  .step { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #999; padding: 6px 14px; }
+  .step { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #999; padding: 5px 12px; border-radius: 999px; }
   .step .num {
     width: 22px; height: 22px; border-radius: 50%; background: #e5e0d8; color: #777;
-    display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;
+    display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; flex: 0 0 auto;
   }
   .step.done { color: var(--teal); }
   .step.done .num { background: var(--teal); color: #fff; }
-  .step.active { color: var(--dark); font-weight: 600; }
-  .step.active .num { background: var(--dark); color: #fff; }
-  .step + .step::before { content: "\2192"; margin-right: 12px; color: #c9c4bb; }
+  .step.active { background: var(--teal); color: #fff; font-weight: 600; }
+  .step.active .num { background: #fff; color: var(--teal); }
+  .step-sep { color: #c9c4bb; font-size: 13px; }
+  #stepHint { flex-basis: 100%; text-align: center; font-size: 12.5px; color: #8a857c; padding-top: 6px; }
 
   /* First-time hint on the document */
   #dropHint {
@@ -261,6 +268,8 @@
   </div>
   <input type="file" id="fileInput" accept=".pdf,.docx" style="display:none">
   <div id="howItWorks">
+    <img class="hiw-mascot" src="https://gohvio.github.io/gohvio-sign/snail-logo.png" alt="Snail Sign mascot: a snail with a pen, on a mission to get your contracts executed">
+    <div>
     <strong class="hiw-title">How it works</strong>
     <ol>
       <li><strong>Upload</strong> your PDF or Word document above.</li>
@@ -269,14 +278,20 @@
       <li><strong>Unlimited documents for $1/month.</strong> After your free document, subscribe for $1 a month and your personal key arrives by email within a minute. Paste it in once and the tool remembers it. Subscribers can also add their <strong>business logo</strong> as a letterhead on every document. Payment is handled securely by Stripe; cancel anytime.</li>
       <li><strong>Send.</strong> Your signers are emailed in order, and everyone automatically receives the final signed PDF, complete with a certificate of completion.</li>
     </ol>
+    </div>
   </div>
 </div>
 
 <div id="workspace">
   <div id="stepsBar">
     <div class="step done" data-step="1"><span class="num">1</span>Upload</div>
+    <span class="step-sep">&rarr;</span>
     <div class="step active" data-step="2"><span class="num">2</span>Place blocks</div>
+    <span class="step-sep">&rarr;</span>
     <div class="step" data-step="3"><span class="num">3</span>Send</div>
+    <span class="step-sep">&rarr;</span>
+    <div class="step" data-step="4"><span class="num">4</span>Everyone signs</div>
+    <div id="stepHint">You're on step 2: drag the blocks below onto the document. Steps 3 and 4 are shown so you know what's ahead.</div>
   </div>
   <div id="toolbar">
     <span class="hint" id="toolbarHint">Drag a block onto the document:</span>
@@ -824,11 +839,21 @@ async function renderPdf() {
 // ---------- step guide + signer color helpers (prep) ----------
 var SIGNER_COLORS = ['#0D7377', '#5C4AE4', '#F4A825', '#FF6B6B'];
 
+var STEP_HINTS = {
+  2: "You're on step 2: drag the blocks below onto the document. Steps 3 and 4 are shown so you know what's ahead.",
+  3: "You're on step 3: click “Send for signature” when the blocks look right. Step 4 happens automatically by email.",
+  4: "Step 4 is underway: your signers are emailed in order, and everyone gets the final signed PDF. You can close this page."
+};
+
 function setStep(n) {
   document.querySelectorAll('#stepsBar .step').forEach(function (s) {
     var k = parseInt(s.dataset.step, 10);
     s.className = 'step' + (k < n ? ' done' : k === n ? ' active' : '');
+    var num = s.querySelector('.num');
+    if (num) num.textContent = k < n ? '✓' : k;
   });
+  var h = document.getElementById('stepHint');
+  if (h && STEP_HINTS[n]) h.textContent = STEP_HINTS[n];
 }
 
 function tintSignerSelect() {
@@ -953,6 +978,7 @@ function enableDropOnPage(wrap) {
       signer: parseInt(document.getElementById('signerSelect').value, 10) || 1
     };
     state.fields.push(f);
+    if (state.fields.length === 1) setStep(3);
     mountField(f);
   });
 }
@@ -994,6 +1020,7 @@ function mountField(f) {
     del.addEventListener('click', function (e) {
       e.stopPropagation();
       state.fields = state.fields.filter(function (x) { return x.id !== f.id; });
+      if (!state.fields.length) setStep(2);
       el.remove();
     });
     el.appendChild(del);
