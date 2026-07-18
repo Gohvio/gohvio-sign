@@ -58,6 +58,8 @@
   }
   #howItWorks strong.hiw-title { font-family: 'Poppins', sans-serif; font-size: 14px; }
   #howItWorks ol { margin: 10px 0 0 18px; color: #555; font-size: 14px; line-height: 1.9; }
+  .sec-item { font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 13px; }
+  .sec-item strong { color: var(--dark); }
 
   /* Step guide (prep mode) */
   #stepsBar { display: flex; justify-content: center; flex-wrap: wrap; padding: 14px 12px 0; }
@@ -238,6 +240,7 @@
   <h1>Gohvio <span>Sign</span></h1>
   <span class="mode-badge" id="modeBadge">Prepare</span>
   <div class="spacer"></div>
+  <button class="btn btn-ghost" id="btnSecurity">&#128274; Security</button>
   <button class="btn btn-ghost" id="btnRestart" style="display:none">Start over</button>
   <button class="btn btn-ghost" id="btnGenerate" style="display:none">Download signing file</button>
   <button class="btn btn-primary" id="btnOpenSend" style="display:none">Send for signature &rarr;</button>
@@ -256,8 +259,10 @@
     <strong class="hiw-title">How it works</strong>
     <ol>
       <li><strong>Upload</strong> your PDF or Word document above.</li>
-      <li><strong>Drag blocks</strong> (signature, text, date) onto the spots each person fills &mdash; each signer gets their own color.</li>
-      <li><strong>Send</strong> &mdash; signers are emailed in order, and everyone automatically receives the final signed PDF.</li>
+      <li><strong>Drag blocks</strong> (signature, text, date) onto the spots each person needs to fill. Every signer gets their own color, so it's easy to see who does what.</li>
+      <li><strong>Get your key.</strong> The first time you click Send, we'll ask for a Gohvio Sign key. Click "Get a key" and subscribe for $1 a month. Payment is handled securely by Stripe, and you can cancel anytime.</li>
+      <li><strong>Check your inbox.</strong> Your key lands in your email within a minute of subscribing. Paste it in once and the tool remembers it from then on.</li>
+      <li><strong>Send.</strong> Your signers are emailed in order, and everyone automatically receives the final signed PDF, complete with a certificate of completion.</li>
     </ol>
   </div>
 </div>
@@ -337,15 +342,44 @@
     <p style="font-size:14px;color:#444;margin-bottom:14px">A key lets Gohvio Sign email your documents for you:
       signature requests, automatic forwarding between signers, and the final signed PDF delivered to everyone.</p>
     <a href="https://buy.stripe.com/bJe8wP2rD12GdkY0CY38405" target="_blank" rel="noopener"
-       class="btn btn-primary" style="display:block;text-align:center;text-decoration:none;margin-bottom:8px">Get a key &mdash; $1/month</a>
+       class="btn btn-primary" style="display:block;text-align:center;text-decoration:none;margin-bottom:8px">Get a key for $1/month</a>
     <p style="font-size:12px;color:#888;margin:0 0 16px">Subscribe and your key arrives by email within a minute.
-      $1 is charged automatically each month &mdash; cancel anytime.</p>
+      $1 is charged automatically each month. Cancel anytime.</p>
     <label style="font-size:13px;color:#666">Already have a key? Paste it here (one-time setup):</label>
     <input type="text" id="keyInput" placeholder="gsk_&hellip;" autocomplete="off"
            style="width:100%;padding:11px;font-size:15px;border:1px solid var(--border);border-radius:8px;margin:4px 0 0;font-family:monospace">
     <div class="modal-actions">
       <button class="btn btn-ghost" id="btnKeyCancel">Cancel</button>
       <button class="btn btn-primary" id="btnKeySave">Save key &amp; send</button>
+    </div>
+  </div>
+</div>
+
+<div id="securityOverlay" style="position:fixed;inset:0;background:rgba(15,17,23,.6);z-index:105;display:none;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:26px;width:640px;max-width:94vw;max-height:86vh;overflow:auto">
+    <h3 style="font-family:'Poppins',sans-serif;margin-bottom:4px">How Gohvio Sign protects your documents</h3>
+    <p style="font-size:13px;color:#888;margin-bottom:16px">Plain answers, no legal jargon.</p>
+    <div class="sec-item"><strong>Your document stays on your computer until you send it.</strong>
+      Preparing a document happens entirely in your browser. Nothing is uploaded anywhere until you click Send.</div>
+    <div class="sec-item"><strong>Signing links can't be guessed or forged.</strong>
+      When you send, the document goes into private, access-controlled storage. Your signer receives a unique,
+      cryptographically signed link. Changing it, pointing it at another document, or extending its life simply breaks it.</div>
+    <div class="sec-item"><strong>Links expire after 14 days.</strong>
+      If a signing link is ever shared or leaks later, it stops working on its own.</div>
+    <div class="sec-item"><strong>Documents delete themselves.</strong>
+      The moment a document is fully signed, the stored copy is automatically deleted. Documents that never get signed
+      are cleaned up after the link expires. We don't keep an archive of your files.</div>
+    <div class="sec-item"><strong>Every signed PDF includes a certificate of completion.</strong>
+      The last page records who signed, when they signed, and a SHA-256 digital fingerprint of the signed document.
+      If even one character changes afterwards, the fingerprint no longer matches, so tampering is provable.</div>
+    <div class="sec-item"><strong>Nobody else is copied.</strong>
+      Emails go only to the signers and the sender. Signing pages are served with no-cache and no-referrer headers,
+      so browsers and networks don't keep copies along the way.</div>
+    <div class="sec-item"><strong>What we never do.</strong>
+      We don't read your documents, sell your data, or use your files to train AI.
+      Documents exist in our storage only long enough to collect signatures.</div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="btnSecurityClose">Got it</button>
     </div>
   </div>
 </div>
@@ -479,6 +513,12 @@ window.addEventListener('DOMContentLoaded', function () {
   });
   tintSignerSelect();
   document.getElementById('signerSelect').addEventListener('change', tintSignerSelect);
+  document.getElementById('btnSecurity').addEventListener('click', function () {
+    document.getElementById('securityOverlay').style.display = 'flex';
+  });
+  document.getElementById('btnSecurityClose').addEventListener('click', function () {
+    document.getElementById('securityOverlay').style.display = 'none';
+  });
 });
 
 // ---------- helpers ----------
@@ -1078,10 +1118,63 @@ function applySignature() {
   updateProgress();
 }
 
+// ---------- certificate of completion ----------
+async function sha256Hex(bytes) {
+  var digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest))
+    .map(function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+}
+
+/* Appends a certificate page: who signed, when, and the SHA-256 fingerprint
+   of the signed document (computed BEFORE this page is added, so anyone can
+   verify by removing the certificate page and re-hashing). */
+async function addCertificatePage(bytes, fingerprint) {
+  var doc = await PDFLib.PDFDocument.load(bytes);
+  var helv = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+  var bold = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+  var courier = await doc.embedFont(PDFLib.StandardFonts.Courier);
+  var page = doc.addPage([612, 792]);
+  var teal = PDFLib.rgb(0.05, 0.45, 0.47);
+  var dark = PDFLib.rgb(0.06, 0.07, 0.09);
+  var grey = PDFLib.rgb(0.4, 0.4, 0.4);
+  var y = 712;
+  function line(txt, font, size, color, indent) {
+    page.drawText(txt, { x: 60 + (indent || 0), y: y, size: size, font: font, color: color });
+    y -= size + 9;
+  }
+  line('Certificate of Completion', bold, 22, teal);
+  y -= 8;
+  line('Document: ' + state.docName, helv, 12, dark);
+  line('Completed: ' + new Date().toUTCString(), helv, 12, dark);
+  y -= 10;
+  line('Signed by:', bold, 12, dark);
+  var list = state.signers.length ? state.signers : [{ email: '(local signing)' }];
+  list.forEach(function (s, i) {
+    var when = s.signedAt ? new Date(s.signedAt).toUTCString() : 'time not recorded';
+    line((i + 1) + '. ' + (s.name ? s.name + ' <' + s.email + '>' : s.email) + ' on ' + when, helv, 11, dark, 12);
+  });
+  y -= 10;
+  line('Document fingerprint (SHA-256):', bold, 12, dark);
+  line(fingerprint.slice(0, 32), courier, 11, dark, 12);
+  line(fingerprint.slice(32), courier, 11, dark, 12);
+  y -= 6;
+  line('This fingerprint covers the signed document pages, excluding this certificate.', helv, 9, grey);
+  line('To verify: remove this page and recompute the SHA-256 of the file. Any change to the', helv, 9, grey);
+  line('signed pages after completion will produce a different fingerprint.', helv, 9, grey);
+  y -= 10;
+  line('Generated by Gohvio Sign  |  gohvio.io', helv, 9, grey);
+  return await doc.save();
+}
+
 // ---------- finish: forward to next signer, or flatten to signed PDF ----------
 async function finishAndDownload() {
   var multi = state.mode === 'sign' && state.signers.length > 1;
   var isLast = !multi || state.signerIndex >= state.signers.length - 1;
+
+  // record when this signer completed (feeds the certificate of completion)
+  if (state.signers[state.signerIndex]) {
+    state.signers[state.signerIndex].signedAt = new Date().toISOString();
+  }
 
   // validate this signer's own fields (on the last signer, validate everything)
   var toCheck = isLast ? state.fields : state.fields.filter(isMyField);
@@ -1116,7 +1209,8 @@ async function finishAndDownload() {
           message: 'Signer ' + (state.signerIndex + 1) + ' of ' + state.signers.length +
             ' has completed their part of "' + state.docName + '". You are the next signer.',
           docName: state.docName,
-          fileHtmlB64: bytesToB64(new TextEncoder().encode(fwdHtml))
+          fileHtmlB64: bytesToB64(new TextEncoder().encode(fwdHtml)),
+          prevPath: window.GOHVIO_PATH || ''  // server deletes this hop's stored file
         });
         toast('Thank you — your part is done! The document was sent to ' + next.email +
               ' to sign next. You’ll receive the final signed PDF when everyone has finished.');
@@ -1169,6 +1263,12 @@ async function finishAndDownload() {
       }
     }
     var bytes = await pdfDoc.save();
+    // certificate of completion: fingerprint the signed pages, then append the page
+    var fingerprint = '';
+    try {
+      fingerprint = await sha256Hex(bytes);
+      bytes = await addCertificatePage(bytes, fingerprint);
+    } catch (certErr) { console.error('certificate page failed', certErr); }
     downloadBlob(new Blob([bytes], { type: 'application/pdf' }),
       state.docName.replace(/\s+/g, '-') + '-signed.pdf');
 
@@ -1188,7 +1288,9 @@ async function finishAndDownload() {
             signerEmail: signerEmail,
             signerEmails: allEmails.length ? allEmails : [signerEmail],
             docName: state.docName,
-            pdfB64: bytesToB64(bytes)
+            pdfB64: bytesToB64(bytes),
+            sha256: fingerprint,                 // shown in the delivery emails
+            docPath: window.GOHVIO_PATH || ''    // server auto-deletes the stored signing file
           });
           toast(allEmails.length > 1
             ? 'Done! The signed document was emailed to all ' + allEmails.length + ' signers and to Emily.'
