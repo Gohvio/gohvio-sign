@@ -1,0 +1,7 @@
+# Never commit generated signed documents or secrets
+SIGN-*.html
+sign-*.html
+Sign-*.html
+.env
+*.env
+*.key
