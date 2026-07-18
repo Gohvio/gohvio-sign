@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gohvio Sign</title>
+<title>Snail Sign</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=DM+Sans:wght@300;400;500&family=Dancing+Script:wght@600&family=Great+Vibes&family=Pacifico&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -21,6 +21,7 @@
     display: flex; align-items: center; gap: 16px;
   }
   header h1 { font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; }
+  .header-mascot { width: 34px; height: 34px; border-radius: 8px; margin-right: 10px; flex: 0 0 auto; }
   header h1 span { color: var(--teal); }
   header .mode-badge {
     background: var(--teal); color: #fff; font-size: 12px; padding: 4px 10px;
@@ -55,10 +56,14 @@
   #howItWorks {
     text-align: left; margin-top: 28px; background: #fff;
     border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px;
-    display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap;
   }
-  .hiw-mascot { width: 92px; height: 92px; border-radius: 12px; flex: 0 0 auto; }
-  #howItWorks > div { flex: 1; min-width: 240px; }
+  .hiw-strip { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+  .hiw-pose { flex: 1 1 110px; min-width: 96px; text-align: center; }
+  .hiw-pose img { width: 100%; max-width: 120px; }
+  .hiw-pose span {
+    display: block; font-family: 'Poppins', sans-serif; font-size: 13px;
+    font-weight: 600; color: var(--teal); margin-top: 4px;
+  }
   #howItWorks strong.hiw-title { font-family: 'Poppins', sans-serif; font-size: 14px; }
   #howItWorks ol { margin: 10px 0 0 18px; color: #555; font-size: 14px; line-height: 1.9; }
   .sec-item { font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 13px; }
@@ -249,7 +254,8 @@
 <script id="embedSlot">/*GOHVIO_EMBED_SLOT*/</script>
 
 <header>
-  <h1>Gohvio <span>Sign</span></h1>
+  <img class="header-mascot" src="https://gohvio.github.io/snail-sign/snail-logo.png" alt="Snail Sign mascot">
+  <h1>Snail <span>Sign</span></h1>
   <span class="mode-badge" id="modeBadge">Prepare</span>
   <div class="spacer"></div>
   <button class="btn btn-ghost" id="btnSecurity">&#128274; Security</button>
@@ -268,9 +274,13 @@
   </div>
   <input type="file" id="fileInput" accept=".pdf,.docx" style="display:none">
   <div id="howItWorks">
-    <img class="hiw-mascot" src="https://gohvio.github.io/gohvio-sign/snail-logo.png" alt="Snail Sign mascot: a snail with a pen, on a mission to get your contracts executed">
-    <div>
     <strong class="hiw-title">How it works</strong>
+    <div class="hiw-strip">
+      <div class="hiw-pose"><img src="https://gohvio.github.io/snail-sign/snail-step1.png" alt="Snail mascot holding a pen, ready to upload"><span>1. Upload</span></div>
+      <div class="hiw-pose"><img src="https://gohvio.github.io/snail-sign/snail-step2.png" alt="Snail mascot holding a document, placing blocks"><span>2. Place blocks</span></div>
+      <div class="hiw-pose"><img src="https://gohvio.github.io/snail-sign/snail-step3.png" alt="Snail mascot with jetpack and red cape, sending"><span>3. Send</span></div>
+      <div class="hiw-pose"><img src="https://gohvio.github.io/snail-sign/snail-step4.png" alt="Snail mascot celebrating a signed document with confetti"><span>4. Signed!</span></div>
+    </div>
     <ol>
       <li><strong>Upload</strong> your PDF or Word document above.</li>
       <li><strong>Drag blocks</strong> (signature, text, date) onto the spots each person needs to fill. Blocks snap to fit the line automatically &mdash; drop a signature right on the "________" and it sizes itself. Every signer gets their own color, so it's easy to see who does what.</li>
@@ -278,7 +288,6 @@
       <li><strong>Unlimited documents for $1/month.</strong> After your free document, subscribe for $1 a month and your personal key arrives by email within a minute. Paste it in once and the tool remembers it. Subscribers can also add their <strong>business logo</strong> as a letterhead on every document. Payment is handled securely by Stripe; cancel anytime.</li>
       <li><strong>Send.</strong> Your signers are emailed in order, and everyone automatically receives the final signed PDF, complete with a certificate of completion.</li>
     </ol>
-    </div>
   </div>
 </div>
 
@@ -362,7 +371,7 @@
 <div id="keyOverlay" style="position:fixed;inset:0;background:rgba(15,17,23,.6);z-index:110;display:none;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:16px;padding:24px;width:440px;max-width:94vw">
     <h3 style="font-family:'Poppins',sans-serif;margin-bottom:10px">Almost there &mdash; how would you like to send?</h3>
-    <p style="font-size:14px;color:#444;margin-bottom:14px">Gohvio Sign emails your documents for you:
+    <p style="font-size:14px;color:#444;margin-bottom:14px">Snail Sign emails your documents for you:
       signature requests, automatic forwarding between signers, and the final signed PDF delivered to everyone.</p>
     <div id="freeTrialBox" style="background:#e6f2f2;border-radius:10px;padding:14px 16px;margin-bottom:14px">
       <strong style="font-size:14px">&#127881; New here? Your first document is free.</strong>
@@ -387,7 +396,7 @@
 
 <div id="securityOverlay" style="position:fixed;inset:0;background:rgba(15,17,23,.6);z-index:105;display:none;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:16px;padding:26px;width:640px;max-width:94vw;max-height:86vh;overflow:auto">
-    <h3 style="font-family:'Poppins',sans-serif;margin-bottom:4px">How Gohvio Sign protects your documents</h3>
+    <h3 style="font-family:'Poppins',sans-serif;margin-bottom:4px">How Snail Sign protects your documents</h3>
     <p style="font-size:13px;color:#888;margin-bottom:16px">Plain answers, no legal jargon.</p>
     <div class="sec-item"><strong>Your document stays on your computer until you send it.</strong>
       Preparing a document happens entirely in your browser. Nothing is uploaded anywhere until you click Send.</div>
@@ -422,8 +431,8 @@
   <div style="font-family:'Poppins',sans-serif;font-weight:600;font-size:17px;margin-bottom:6px">
     Want to send out your own document for signatures?</div>
   <div style="font-size:14px;opacity:.95;margin-bottom:14px">
-    Try Gohvio Sign: <strong>1 free document</strong> and only <strong>$1/month</strong> for unlimited docs.</div>
-  <a href="https://gohvio.github.io/gohvio-sign/" target="_blank" rel="noopener"
+    Try Snail Sign: <strong>1 free document</strong> and only <strong>$1/month</strong> for unlimited docs.</div>
+  <a href="https://gohvio.github.io/snail-sign/" target="_blank" rel="noopener"
      style="display:inline-block;background:#fff;color:#FF6B6B;font-weight:700;font-family:'Poppins',sans-serif;
             padding:12px 26px;border-radius:10px;text-decoration:none;font-size:15px">Send my free document &rarr;</a>
 </div>
@@ -433,7 +442,7 @@
 
 <script>
 /* ============================================================
-   Gohvio Sign — single-file e-signature tool
+   Snail Sign — single-file e-signature tool
    Prep mode  : Emily uploads a doc, places fields, downloads a
                 self-contained signing HTML file.
    Sign mode  : the signing file (this same app + embedded data)
@@ -1433,7 +1442,7 @@ async function addCertificatePage(bytes, fingerprint) {
   line('To verify: remove this page and recompute the SHA-256 of the file. Any change to the', helv, 9, grey);
   line('signed pages after completion will produce a different fingerprint.', helv, 9, grey);
   y -= 10;
-  line('Generated by Gohvio Sign  |  gohvio.io', helv, 9, grey);
+  line('Generated by Snail Sign  |  gohvio.io', helv, 9, grey);
   return await doc.save();
 }
 
@@ -1563,7 +1572,7 @@ async function finishAndDownload() {
       state.docName.replace(/\s+/g, '-') + '-signed.pdf');
 
     // Auto-email the signed copy to both parties, if this file was sent
-    // through Gohvio Sign (key embedded). Local download above is the fallback.
+    // through Snail Sign (key embedded). Local download above is the fallback.
     var emb = window.GOHVIO_DOC || {};
     if (emb.key || emb.freeEmail) {
       var allEmails = state.signers.map(function (s) { return s.email; }).filter(Boolean);
