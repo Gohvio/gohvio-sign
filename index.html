@@ -231,6 +231,11 @@
     display: none; align-items: center; justify-content: center;
     font-family: 'Poppins', sans-serif; font-size: 18px; color: var(--teal);
   }
+  .logo-letterhead {
+    position: absolute; top: 18px; left: 24px;
+    max-height: 44px; max-width: 180px;
+    z-index: 5; pointer-events: none;
+  }
 </style>
 </head>
 <body>
@@ -259,9 +264,9 @@
     <strong class="hiw-title">How it works</strong>
     <ol>
       <li><strong>Upload</strong> your PDF or Word document above.</li>
-      <li><strong>Drag blocks</strong> (signature, text, date) onto the spots each person needs to fill. Every signer gets their own color, so it's easy to see who does what.</li>
-      <li><strong>Get your key.</strong> The first time you click Send, we'll ask for a Gohvio Sign key. Click "Get a key" and subscribe for $1 a month. Payment is handled securely by Stripe, and you can cancel anytime.</li>
-      <li><strong>Check your inbox.</strong> Your key lands in your email within a minute of subscribing. Paste it in once and the tool remembers it from then on.</li>
+      <li><strong>Drag blocks</strong> (signature, text, date) onto the spots each person needs to fill. Blocks snap to fit the line automatically &mdash; drop a signature right on the "________" and it sizes itself. Every signer gets their own color, so it's easy to see who does what.</li>
+      <li><strong>Your first document is free.</strong> The first time you click Send, just enter your email — no payment needed. Your 1 free document sends right away.</li>
+      <li><strong>Unlimited documents for $1/month.</strong> After your free document, subscribe for $1 a month and your personal key arrives by email within a minute. Paste it in once and the tool remembers it. Subscribers can also add their <strong>business logo</strong> as a letterhead on every document. Payment is handled securely by Stripe; cancel anytime.</li>
       <li><strong>Send.</strong> Your signers are emailed in order, and everyone automatically receives the final signed PDF, complete with a certificate of completion.</li>
     </ol>
   </div>
@@ -285,6 +290,9 @@
       <option value="3">Signer 3</option>
       <option value="4">Signer 4</option>
     </select>
+    <button class="btn btn-ghost" id="btnLogo" style="margin-left:14px"
+            title="Subscribers can add their business logo as a letterhead at the top of the document.">&#127912; Add my logo</button>
+    <input type="file" id="logoInput" accept="image/png,image/jpeg,image/webp" style="display:none">
   </div>
   <div id="pages"></div>
 </div>
@@ -338,13 +346,20 @@
 
 <div id="keyOverlay" style="position:fixed;inset:0;background:rgba(15,17,23,.6);z-index:110;display:none;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:16px;padding:24px;width:440px;max-width:94vw">
-    <h3 style="font-family:'Poppins',sans-serif;margin-bottom:10px">Sending needs a Gohvio Sign key</h3>
-    <p style="font-size:14px;color:#444;margin-bottom:14px">A key lets Gohvio Sign email your documents for you:
+    <h3 style="font-family:'Poppins',sans-serif;margin-bottom:10px">Almost there &mdash; how would you like to send?</h3>
+    <p style="font-size:14px;color:#444;margin-bottom:14px">Gohvio Sign emails your documents for you:
       signature requests, automatic forwarding between signers, and the final signed PDF delivered to everyone.</p>
+    <div id="freeTrialBox" style="background:#e6f2f2;border-radius:10px;padding:14px 16px;margin-bottom:14px">
+      <strong style="font-size:14px">&#127881; New here? Your first document is free.</strong>
+      <p style="font-size:12px;color:#666;margin:4px 0 8px">Enter your email and send your 1 free document — no payment needed.</p>
+      <input type="email" id="freeEmailInput" placeholder="you@company.com" autocomplete="email"
+             style="width:100%;padding:11px;font-size:15px;border:1px solid var(--border);border-radius:8px;margin:0 0 8px">
+      <button class="btn btn-primary" id="btnFreeSend" style="display:block;width:100%">Send my free document</button>
+    </div>
     <a href="https://buy.stripe.com/bJe8wP2rD12GdkY0CY38405" target="_blank" rel="noopener"
-       class="btn btn-primary" style="display:block;text-align:center;text-decoration:none;margin-bottom:8px">Get a key for $1/month</a>
+       class="btn btn-primary" style="display:block;text-align:center;text-decoration:none;margin-bottom:8px">Get a key for $1/month &mdash; unlimited documents</a>
     <p style="font-size:12px;color:#888;margin:0 0 16px">Subscribe and your key arrives by email within a minute.
-      $1 is charged automatically each month. Cancel anytime.</p>
+      Includes your business logo as a letterhead on every document. $1 is charged automatically each month. Cancel anytime.</p>
     <label style="font-size:13px;color:#666">Already have a key? Paste it here (one-time setup):</label>
     <input type="text" id="keyInput" placeholder="gsk_&hellip;" autocomplete="off"
            style="width:100%;padding:11px;font-size:15px;border:1px solid var(--border);border-radius:8px;margin:4px 0 0;font-family:monospace">
@@ -384,6 +399,20 @@
   </div>
 </div>
 
+<div id="promoCta" style="display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:400;
+     background:linear-gradient(135deg,#F4A825,#FF6B6B);color:#fff;border-radius:16px;padding:20px 24px;
+     width:460px;max-width:92vw;box-shadow:0 12px 40px rgba(255,107,107,.45);text-align:center">
+  <button id="btnPromoClose" aria-label="Close"
+          style="position:absolute;top:8px;right:12px;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1">&times;</button>
+  <div style="font-family:'Poppins',sans-serif;font-weight:600;font-size:17px;margin-bottom:6px">
+    Want to send out your own document for signatures?</div>
+  <div style="font-size:14px;opacity:.95;margin-bottom:14px">
+    Try Gohvio Sign: <strong>1 free document</strong> and only <strong>$1/month</strong> for unlimited docs.</div>
+  <a href="https://gohvio.github.io/gohvio-sign/" target="_blank" rel="noopener"
+     style="display:inline-block;background:#fff;color:#FF6B6B;font-weight:700;font-family:'Poppins',sans-serif;
+            padding:12px 26px;border-radius:10px;text-decoration:none;font-size:15px">Send my free document &rarr;</a>
+</div>
+
 <div id="toast"></div>
 <div id="busy">Working&hellip;</div>
 
@@ -406,27 +435,41 @@ var ESIGN_ENDPOINT = 'https://xaffxerlsieiaqorlelm.supabase.co/functions/v1/esig
 function getEsignKey() {
   return (localStorage.getItem('gohvioEsignKey') || '').trim();
 }
+function getFreeEmail() {
+  return (localStorage.getItem('gohvioEsignFree') || '').trim().toLowerCase();
+}
 
-/* No key saved yet: show the key dialog — buy ($1/mo Stripe subscription,
-   opens in a new tab) or paste an existing key. Resolves with the key,
-   or '' if the user cancels. */
-function requestEsignKey() {
+/* No key saved yet: show the credentials dialog — send the 1 free document
+   (email only), buy ($1/mo Stripe subscription, opens in a new tab), or paste
+   an existing key. Resolves with {key, freeEmail} or null if cancelled.
+   freeUsed=true hides the free option (their free document is spent). */
+function requestEsignCred(freeUsed) {
   return new Promise(function (resolve) {
     var ov = document.getElementById('keyOverlay');
     var input = document.getElementById('keyInput');
+    var freeBox = document.getElementById('freeTrialBox');
+    var freeInput = document.getElementById('freeEmailInput');
     input.value = '';
+    freeBox.style.display = freeUsed ? 'none' : 'block';
     ov.style.display = 'flex';
-    try { input.focus(); } catch (e) { /* no-op */ }
+    try { (freeUsed ? input : freeInput).focus(); } catch (e) { /* no-op */ }
+    document.getElementById('btnFreeSend').onclick = function () {
+      var em = freeInput.value.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { toast('Enter a valid email address first.'); return; }
+      localStorage.setItem('gohvioEsignFree', em);
+      ov.style.display = 'none';
+      resolve({ key: '', freeEmail: em });
+    };
     document.getElementById('btnKeyCancel').onclick = function () {
       ov.style.display = 'none';
-      resolve('');
+      resolve(null);
     };
     document.getElementById('btnKeySave').onclick = function () {
       var k = input.value.trim();
       if (!k) { toast('Paste your key first — or click "Get a key" to subscribe.'); return; }
       localStorage.setItem('gohvioEsignKey', k);
       ov.style.display = 'none';
-      resolve(k);
+      resolve({ key: k, freeEmail: '' });
     };
   });
 }
@@ -459,7 +502,8 @@ var state = {
   signers: [],             // [{email, name}] in signing order
   signerIndex: 0,          // sign mode: whose turn (0-based index into signers)
   pageDims: [],            // [{w,h}] display px per page
-  fieldSeq: 1
+  fieldSeq: 1,
+  logo: null               // subscriber letterhead logo (PNG data URL) or null
 };
 
 // True when this field belongs to whoever is signing right now.
@@ -484,6 +528,7 @@ window.addEventListener('DOMContentLoaded', function () {
       (embedded.signerEmail ? [{ email: embedded.signerEmail, name: embedded.signerName || '' }] : []);
     state.signerIndex = embedded.signerIndex || 0;
     if (embedded.values) state.values = embedded.values;
+    if (embedded.logo) state.logo = embedded.logo;
     document.body.classList.add('sign');
     var multi = state.signers.length > 1;
     document.getElementById('modeBadge').textContent = multi
@@ -499,6 +544,9 @@ window.addEventListener('DOMContentLoaded', function () {
   } else {
     document.body.classList.add('prep');
     setupUpload();
+    // Subscribers: restore their saved logo letterhead.
+    if (getEsignKey()) state.logo = localStorage.getItem('gohvioEsignLogo') || null;
+    setupLogo();
   }
   setupPalette();
   setupModal();
@@ -519,6 +567,9 @@ window.addEventListener('DOMContentLoaded', function () {
   document.getElementById('btnSecurityClose').addEventListener('click', function () {
     document.getElementById('securityOverlay').style.display = 'none';
   });
+  document.getElementById('btnPromoClose').addEventListener('click', function () {
+    document.getElementById('promoCta').style.display = 'none';
+  });
 });
 
 // ---------- helpers ----------
@@ -528,6 +579,15 @@ function toast(msg) {
   clearTimeout(t._h); t._h = setTimeout(function () { t.style.display = 'none'; }, 8000);
 }
 function busy(on) { document.getElementById('busy').style.display = on ? 'flex' : 'none'; }
+
+/* Bright CTA shown to signers after they finish their part — waits a moment
+   so the confirmation toast lands first. */
+function showPromoCta() {
+  setTimeout(function () {
+    var box = document.getElementById('promoCta');
+    if (box) box.style.display = 'block';
+  }, 1500);
+}
 function b64ToBytes(b64) {
   var bin = atob(b64), arr = new Uint8Array(bin.length);
   for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
@@ -624,17 +684,97 @@ async function docxToPdfBase64(arrayBuffer) {
   return bytesToB64(await pdfDoc.save());
 }
 
+// ---------- logo letterhead (subscriber feature) ----------
+function setupLogo() {
+  var btn = document.getElementById('btnLogo');
+  var input = document.getElementById('logoInput');
+  if (!btn || !input) return;
+  updateLogoButton();
+  btn.addEventListener('click', function () {
+    if (!getEsignKey()) {
+      toast('The logo letterhead is a subscriber feature — get a key ($1/month) and your logo appears at the top of every document you send.');
+      return;
+    }
+    if (state.logo) {
+      // Toggle off: remove the saved logo.
+      state.logo = null;
+      localStorage.removeItem('gohvioEsignLogo');
+      renderLogoOverlay();
+      updateLogoButton();
+      toast('Logo removed.');
+      return;
+    }
+    input.value = '';
+    input.click();
+  });
+  input.addEventListener('change', function () {
+    if (input.files && input.files.length) handleLogoFile(input.files[0]);
+  });
+}
+
+function updateLogoButton() {
+  var btn = document.getElementById('btnLogo');
+  if (btn) btn.innerHTML = state.logo ? '&#10060; Remove logo' : '&#127912; Add my logo';
+}
+
+/* Downscale the chosen image to letterhead size and keep it as a PNG data URL
+   (stored in the browser only — it travels inside the signing file). */
+function handleLogoFile(file) {
+  var reader = new FileReader();
+  reader.onload = function () {
+    var img = new Image();
+    img.onload = function () {
+      var maxW = 480, maxH = 160;
+      var s = Math.min(1, maxW / img.width, maxH / img.height);
+      var c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.width * s));
+      c.height = Math.max(1, Math.round(img.height * s));
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      var dataUrl = c.toDataURL('image/png');
+      if (dataUrl.length > 400000) { toast('That logo is too complex — please use a smaller or simpler image.'); return; }
+      state.logo = dataUrl;
+      try { localStorage.setItem('gohvioEsignLogo', dataUrl); } catch (e) { /* storage full — session only */ }
+      renderLogoOverlay();
+      updateLogoButton();
+      toast('Logo added! It shows as a letterhead at the top of page 1 and carries into the final signed PDF.');
+    };
+    img.onerror = function () { toast('Could not read that image.'); };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* Show the logo at the top of page 1 (prep preview + signer view). */
+function renderLogoOverlay() {
+  var old = document.querySelector('.logo-letterhead');
+  if (old) old.remove();
+  if (!state.logo) return;
+  var firstPage = document.querySelector('#pages .page-wrap');
+  if (!firstPage) return;
+  var img = document.createElement('img');
+  img.className = 'logo-letterhead';
+  img.src = state.logo;
+  firstPage.appendChild(img);
+}
+
 // ---------- render PDF pages ----------
 async function renderPdf() {
   var container = document.getElementById('pages');
   container.innerHTML = '';
   state.pageDims = [];
+  state.pageLines = [];
   var pdf = await pdfjsLib.getDocument({ data: b64ToBytes(state.pdfBase64) }).promise;
   var displayW = Math.min(860, window.innerWidth - 40);
   for (var i = 1; i <= pdf.numPages; i++) {
     var page = await pdf.getPage(i);
     var vp1 = page.getViewport({ scale: 1 });
     var scale = displayW / vp1.width;
+    // text-line map for smart block snapping (prep mode; best-effort —
+    // scanned or docx-converted pages have no text layer and that's fine)
+    if (state.mode === 'prep') {
+      try { state.pageLines.push(await extractTextLines(page, scale, vp1.height)); }
+      catch (tlErr) { state.pageLines.push([]); }
+    } else { state.pageLines.push([]); }
     var displayH = vp1.height * scale;
     // Render at 2x for sharpness, but stay under browser canvas limits
     // (Safari caps canvas area ~16.7M px and dimensions ~8192px).
@@ -665,6 +805,9 @@ async function renderPdf() {
   }
   // draw existing fields (sign mode)
   state.fields.forEach(function (f) { mountField(f); });
+
+  // subscriber letterhead on page 1
+  renderLogoOverlay();
 
   // first-time hint on the first page (prep mode, no blocks yet)
   if (state.mode === 'prep' && !state.fields.length && !document.getElementById('dropHint')) {
@@ -705,6 +848,87 @@ function setupPalette() {
   });
 }
 
+/* Read the page's text layer (pdf.js) and group items into lines, in display
+   pixels with a top-left origin. Runs of underscores/dots ("Sign: ______")
+   are marked as fill-in blanks so dropped blocks can size themselves to them. */
+async function extractTextLines(page, k, pageH1) {
+  var tc = await page.getTextContent();
+  var lines = [];
+  tc.items.forEach(function (it) {
+    if (!it.str || !it.str.trim() || !it.width) return;
+    var ih = Math.abs(it.transform[3]) || Math.abs(it.transform[0]) || 10;
+    var seg = {
+      x0: it.transform[4] * k,
+      x1: (it.transform[4] + it.width) * k,
+      blank: /^[\s._…─-╿]+$/.test(it.str) && /[._─-╿]{3}/.test(it.str)
+    };
+    var top = (pageH1 - it.transform[5] - ih) * k;
+    var bottom = (pageH1 - it.transform[5]) * k;
+    // join with an existing line whose bottom is (nearly) the same baseline
+    var line = null;
+    for (var i = 0; i < lines.length; i++) {
+      if (Math.abs(lines[i].bottom - bottom) < Math.max(3, ih * k * 0.4)) { line = lines[i]; break; }
+    }
+    if (!line) { line = { top: top, bottom: bottom, segs: [] }; lines.push(line); }
+    line.top = Math.min(line.top, top);
+    line.bottom = Math.max(line.bottom, bottom);
+    line.segs.push(seg);
+  });
+  return lines;
+}
+
+/* Fit a dropped block to the document so the sender never has to resize:
+   snap the height to the nearest text line, sit the block ON that line, and
+   size the width to the fill-in blank or free gap under the cursor.
+   Falls back to sensible defaults when there's no text nearby. */
+function fitBlockToLine(type, pageIdx, cx, cy, d) {
+  var dims = state.pageDims[pageIdx];
+  var res = { x: cx - d[0] / 2, y: cy - d[1] / 2, w: d[0], h: d[1] };
+  var lines = (state.pageLines && state.pageLines[pageIdx]) || [];
+  var best = null, bestDist = 26; // only snap when a line is close (px)
+  lines.forEach(function (L) {
+    var dist = Math.abs((L.top + L.bottom) / 2 - cy);
+    if (dist < bestDist) { bestDist = dist; best = L; }
+  });
+  if (best) {
+    var lineH = Math.min(Math.max(best.bottom - best.top, 9), 36);
+    res.h = type === 'signature'
+      ? Math.min(Math.max(lineH * 2.4, 36), 72)
+      : Math.min(Math.max(lineH * 1.4, 22), 40);
+    res.y = best.bottom + 2 - res.h;   // block sits on the line
+    var padX = 3;
+    // 1) dropped on a fill-in blank ("______")? size the block to it exactly
+    var target = null;
+    best.segs.forEach(function (s) {
+      if (!target && s.blank && s.x1 - s.x0 >= 40 && cx >= s.x0 - 12 && cx <= s.x1 + 12) target = s;
+    });
+    if (target) {
+      res.x = target.x0 + padX;
+      res.w = Math.max(50, target.x1 - target.x0 - padX * 2);
+    } else {
+      // 2) otherwise fit the free gap between printed text around the cursor
+      var occ = best.segs.filter(function (s) { return !s.blank; })
+        .sort(function (a, b) { return a.x0 - b.x0; });
+      var left = 8, right = dims.w - 8;
+      for (var i = 0; i < occ.length; i++) {
+        if (occ[i].x1 <= cx) left = Math.max(left, occ[i].x1 + padX);
+        if (occ[i].x0 >= cx) { right = Math.min(right, occ[i].x0 - padX); break; }
+      }
+      var avail = right - left;
+      if (avail >= 50) {
+        if (avail <= d[0] * 1.6) { res.x = left; res.w = avail; }       // snug gap: fill it
+        else { res.w = d[0]; res.x = Math.min(Math.max(cx - d[0] / 2, left), right - d[0]); }
+      } // gap too tight (cursor over printed text): keep width, vertical snap only
+    }
+  }
+  // clamp inside the page
+  res.w = Math.min(res.w, dims.w - 16);
+  res.h = Math.min(res.h, dims.h - 8);
+  res.x = Math.min(Math.max(res.x, 0), dims.w - res.w);
+  res.y = Math.min(Math.max(res.y, 0), dims.h - res.h);
+  return res;
+}
+
 function enableDropOnPage(wrap) {
   wrap.addEventListener('dragover', function (e) { e.preventDefault(); });
   wrap.addEventListener('drop', function (e) {
@@ -717,15 +941,15 @@ function enableDropOnPage(wrap) {
     var pageIdx = parseInt(wrap.dataset.page, 10);
     var dims = state.pageDims[pageIdx];
     var defaults = { text: [180, 34], date: [140, 34], signature: [220, 60] };
-    var d = defaults[type];
+    var fit = fitBlockToLine(type, pageIdx, e.clientX - rect.left, e.clientY - rect.top, defaults[type]);
     var f = {
       id: 'f' + (state.fieldSeq++),
       type: type,
       page: pageIdx,
-      x: Math.max(0, (e.clientX - rect.left - d[0] / 2)) / dims.w,
-      y: Math.max(0, (e.clientY - rect.top - d[1] / 2)) / dims.h,
-      w: d[0] / dims.w,
-      h: d[1] / dims.h,
+      x: fit.x / dims.w,
+      y: fit.y / dims.h,
+      w: fit.w / dims.w,
+      h: fit.h / dims.h,
       signer: parseInt(document.getElementById('signerSelect').value, 10) || 1
     };
     state.fields.push(f);
@@ -860,9 +1084,13 @@ function buildSigningHtml(extra) {
 
 function generateSigningFile() {
   if (!state.fields.length) { toast('Place at least one block first.'); return; }
-  // embed key if already saved (so Finish can email copies); don't prompt here
-  var key = (localStorage.getItem('gohvioEsignKey') || '').trim();
-  var html = buildSigningHtml(key ? { key: key } : null);
+  // embed credentials if already saved (so Finish can email copies); don't prompt here
+  var key = getEsignKey();
+  var freeEmail = key ? '' : getFreeEmail();
+  var extra = {};
+  if (key) { extra.key = key; if (state.logo) extra.logo = state.logo; }
+  else if (freeEmail) { extra.freeEmail = freeEmail; }
+  var html = buildSigningHtml(extra);
   if (!html) { toast('Internal error: embed slot not found.'); return; }
   downloadBlob(new Blob([html], { type: 'text/html' }),
     'SIGN-' + state.docName.replace(/\s+/g, '-') + '.html');
@@ -921,8 +1149,12 @@ async function sendForSignature() {
     }
   }
   var key = getEsignKey();
-  if (!key) key = await requestEsignKey();
-  if (!key) return; // user cancelled the key dialog
+  var freeEmail = key ? '' : getFreeEmail();
+  if (!key && !freeEmail) {
+    var cred = await requestEsignCred(false);
+    if (!cred) return; // user cancelled the dialog
+    key = cred.key; freeEmail = cred.freeEmail;
+  }
   // Renumber fields so signer numbers are 1..N in signing order
   // (e.g. if only Signer 1 and Signer 3 were used, 3 becomes 2).
   var used = usedSignerNumbers();
@@ -931,6 +1163,8 @@ async function sendForSignature() {
   state.fields.forEach(function (f) { f.signer = remap[f.signer || 1]; });
   var html = buildSigningHtml({
     key: key,
+    freeEmail: freeEmail,
+    logo: key ? (state.logo || '') : '',   // logo letterhead is a subscriber feature
     signers: signers,
     signerIndex: 0,
     values: {},
@@ -942,6 +1176,7 @@ async function sendForSignature() {
     await callEsign({
       action: 'send_request',
       key: key,
+      freeEmail: freeEmail,
       signerEmail: signers[0].email,
       signerName: signers[0].name,
       message: document.getElementById('sendMessage').value.trim(),
@@ -956,6 +1191,15 @@ async function sendForSignature() {
       : 'Sent to ' + signers[0].email + '. A copy is in your inbox (BCC).');
   } catch (err) {
     if (/Bad key/i.test(err.message)) localStorage.removeItem('gohvioEsignKey');
+    if (/free document already used/i.test(err.message)) {
+      // Their 1 free document is spent — show the dialog again without the
+      // free option, then retry the send with whatever they choose.
+      busy(false);
+      toast('Your 1 free document has been used. Subscribe for $1/month for unlimited documents.');
+      var cred2 = await requestEsignCred(true);
+      if (cred2 && cred2.key) { await sendForSignature(); }
+      return;
+    }
     toast('Send failed: ' + err.message);
   } finally { busy(false); }
 }
@@ -1193,17 +1437,20 @@ async function finishAndDownload() {
     var next = state.signers[state.signerIndex + 1];
     var fwdHtml = buildSigningHtml({
       key: embF.key,
+      freeEmail: embF.freeEmail,
+      logo: embF.logo,
       signers: state.signers,
       signerIndex: state.signerIndex + 1,
       values: state.values,
       signerEmail: next.email
     });
-    if (embF.key && fwdHtml) {
+    if ((embF.key || embF.freeEmail) && fwdHtml) {
       busy(true);
       try {
         await callEsign({
           action: 'send_request',
-          key: embF.key,
+          key: embF.key || '',
+          freeEmail: embF.freeEmail || '',
           signerEmail: next.email,
           signerName: next.name || '',
           message: 'Signer ' + (state.signerIndex + 1) + ' of ' + state.signers.length +
@@ -1214,6 +1461,7 @@ async function finishAndDownload() {
         });
         toast('Thank you — your part is done! The document was sent to ' + next.email +
               ' to sign next. You’ll receive the final signed PDF when everyone has finished.');
+        showPromoCta();
       } catch (err) {
         console.error(err);
         if (fwdHtml) {
@@ -1230,6 +1478,7 @@ async function finishAndDownload() {
         'SIGN-' + state.docName.replace(/\s+/g, '-') + '-next-signer.html');
       toast('Your part is done! A signing file was downloaded — please email it to ' +
             next.email + ' to sign next.');
+      showPromoCta();
     } else {
       toast('Internal error: could not prepare the file for the next signer.');
     }
@@ -1241,6 +1490,20 @@ async function finishAndDownload() {
     var pdfDoc = await PDFLib.PDFDocument.load(b64ToBytes(state.pdfBase64));
     var helv = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
     var pages = pdfDoc.getPages();
+
+    // Subscriber letterhead: stamp the logo at the top-left of page 1,
+    // matching where the on-screen preview shows it.
+    if (state.logo && pages.length) {
+      try {
+        var logoPng = await pdfDoc.embedPng(state.logo);
+        var p1 = pages[0];
+        var dispW = (state.pageDims[0] && state.pageDims[0].w) || 860;
+        var k = p1.getWidth() / dispW;  // display px -> PDF points
+        var ls = Math.min(44 / logoPng.height, 180 / logoPng.width, 1);
+        var lw = logoPng.width * ls * k, lh = logoPng.height * ls * k;
+        p1.drawImage(logoPng, { x: 24 * k, y: p1.getHeight() - 18 * k - lh, width: lw, height: lh });
+      } catch (logoErr) { console.error('logo stamp failed', logoErr); }
+    }
     for (var j = 0; j < state.fields.length; j++) {
       var fld = state.fields[j];
       var val = state.values[fld.id];
@@ -1275,7 +1538,7 @@ async function finishAndDownload() {
     // Auto-email the signed copy to both parties, if this file was sent
     // through Gohvio Sign (key embedded). Local download above is the fallback.
     var emb = window.GOHVIO_DOC || {};
-    if (emb.key) {
+    if (emb.key || emb.freeEmail) {
       var allEmails = state.signers.map(function (s) { return s.email; }).filter(Boolean);
       var signerEmail = allEmails[allEmails.length - 1] || emb.signerEmail ||
         prompt('Enter your email to receive your signed copy:') || '';
@@ -1284,7 +1547,8 @@ async function finishAndDownload() {
         try {
           await callEsign({
             action: 'send_signed',
-            key: emb.key,
+            key: emb.key || '',
+            freeEmail: emb.freeEmail || '',
             signerEmail: signerEmail,
             signerEmails: allEmails.length ? allEmails : [signerEmail],
             docName: state.docName,
@@ -1293,8 +1557,9 @@ async function finishAndDownload() {
             docPath: window.GOHVIO_PATH || ''    // server auto-deletes the stored signing file
           });
           toast(allEmails.length > 1
-            ? 'Done! The signed document was emailed to all ' + allEmails.length + ' signers and to Emily.'
-            : 'Done! The signed document was emailed to you and to Emily.');
+            ? 'Done! The signed document was emailed to all ' + allEmails.length + ' signers and to the sender.'
+            : 'Done! The signed document was emailed to you and to the sender.');
+          showPromoCta();
           return;
         } catch (err) {
           console.error(err);
@@ -1305,6 +1570,7 @@ async function finishAndDownload() {
       }
     }
     toast('Signed PDF downloaded. Email it back to the sender.');
+    showPromoCta();
   } catch (err) {
     console.error(err);
     toast('Could not create the PDF: ' + err.message);
