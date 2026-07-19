@@ -65,7 +65,15 @@
     font-weight: 600; color: var(--teal); margin-top: 4px;
   }
   #howItWorks strong.hiw-title { font-family: 'Poppins', sans-serif; font-size: 14px; }
-  #howItWorks ol { margin: 10px 0 0 18px; color: #555; font-size: 14px; line-height: 1.9; }
+  .hiw-pose small { display: block; color: #555; font-size: 12.5px; line-height: 1.45; margin-top: 4px; }
+  #pricingBanner {
+    background: var(--teal); color: #fff; font-size: 14px;
+    padding: 10px 44px 10px 20px; text-align: center; position: relative;
+  }
+  #pricingBanner button {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; line-height: 1;
+  }
   .sec-item { font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 13px; }
   .sec-item strong { color: var(--dark); }
 
@@ -264,6 +272,12 @@
   <button class="btn btn-primary" id="btnOpenSend" style="display:none">Send for signature &rarr;</button>
 </header>
 
+<div id="pricingBanner">
+  <span>&#127881; <strong>Your first document is free</strong>, no payment needed. After that it's <strong>$1/month for unlimited documents</strong>, plus your business logo as a letterhead. Secure payment by Stripe, cancel anytime.</span>
+  <button aria-label="Dismiss" onclick="localStorage.setItem('ssBannerHidden','1');this.parentElement.style.display='none'">&times;</button>
+</div>
+<script>if (localStorage.getItem('ssBannerHidden')) document.getElementById('pricingBanner').style.display = 'none';</script>
+
 <div id="uploadScreen">
   <h2>Send a document for signature</h2>
   <p>Upload a PDF or Word document, place the blocks your signer needs to fill, then download a signing file to email them.</p>
@@ -276,18 +290,11 @@
   <div id="howItWorks">
     <strong class="hiw-title">How it works</strong>
     <div class="hiw-strip">
-      <div class="hiw-pose"><img src="https://gohvio.github.io/snail-sign/snail-step1.png" alt="Snail mascot holding a pen, ready to upload"><span>1. Upload</span></div>
-      <div class="hiw-pose"><img src="https://gohvio.github.io/snail-sign/snail-step2.png" alt="Snail mascot holding a document, placing blocks"><span>2. Place blocks</span></div>
-      <div class="hiw-pose"><img src="https://gohvio.github.io/snail-sign/snail-step3.png" alt="Snail mascot with jetpack and red cape, sending"><span>3. Send</span></div>
-      <div class="hiw-pose"><img src="https://gohvio.github.io/snail-sign/snail-step4.png" alt="Snail mascot celebrating a signed document with confetti"><span>4. Signed!</span></div>
+      <div class="hiw-pose"><img src="https://gohvio.github.io/snail-sign/snail-step1.png" alt="Snail mascot holding a pen, ready to upload"><span>1. Upload</span><small>Upload your PDF or Word doc above.</small></div>
+      <div class="hiw-pose"><img src="https://gohvio.github.io/snail-sign/snail-step2.png" alt="Snail mascot holding a document, placing blocks"><span>2. Place blocks</span><small>Drag blocks (signature, text, date) onto the spots each person fills.</small></div>
+      <div class="hiw-pose"><img src="https://gohvio.github.io/snail-sign/snail-step3.png" alt="Snail mascot with jetpack and red cape, sending"><span>3. Send</span><small>Your signers are emailed in order.</small></div>
+      <div class="hiw-pose"><img src="https://gohvio.github.io/snail-sign/snail-step4.png" alt="Snail mascot celebrating a signed document with confetti"><span>4. Signed!</span><small>Everyone gets the signed PDF with a certificate of completion.</small></div>
     </div>
-    <ol>
-      <li><strong>Upload</strong> your PDF or Word document above.</li>
-      <li><strong>Drag blocks</strong> (signature, text, date) onto the spots each person needs to fill. Blocks snap to fit the line automatically &mdash; drop a signature right on the "________" and it sizes itself. Every signer gets their own color, so it's easy to see who does what.</li>
-      <li><strong>Your first document is free.</strong> The first time you click Send, just enter your email — no payment needed. Your 1 free document sends right away.</li>
-      <li><strong>Unlimited documents for $1/month.</strong> After your free document, subscribe for $1 a month and your personal key arrives by email within a minute. Paste it in once and the tool remembers it. Subscribers can also add their <strong>business logo</strong> as a letterhead on every document. Payment is handled securely by Stripe; cancel anytime.</li>
-      <li><strong>Send.</strong> Your signers are emailed in order, and everyone automatically receives the final signed PDF, complete with a certificate of completion.</li>
-    </ol>
   </div>
 </div>
 
