@@ -21,7 +21,14 @@
     display: flex; align-items: center; gap: 16px;
   }
   header h1 { font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; }
-  .header-mascot { width: 34px; height: 34px; border-radius: 8px; margin-right: 10px; flex: 0 0 auto; }
+  .header-mascot { width: 52px; height: 52px; border-radius: 12px; margin-right: 12px; flex: 0 0 auto; }
+  .tip { position: relative; }
+  .tip:hover::after {
+    content: attr(data-tip); position: absolute; top: calc(100% + 8px); left: 0;
+    background: var(--dark); color: #fff; font-size: 12.5px; font-weight: 400;
+    line-height: 1.5; padding: 10px 12px; border-radius: 8px; width: 250px;
+    text-align: left; z-index: 60; box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  }
   header h1 span { color: var(--teal); }
   header .mode-badge {
     background: var(--teal); color: #fff; font-size: 12px; padding: 4px 10px;
@@ -264,7 +271,7 @@
 <header>
   <img class="header-mascot" src="https://gohvio.github.io/snail-sign/snail-logo.png" alt="Snail Sign mascot">
   <h1>Snail <span>Sign</span></h1>
-  <span class="mode-badge" id="modeBadge">Prepare</span>
+  <span class="mode-badge" id="modeBadge" style="display:none">Prepare</span>
   <div class="spacer"></div>
   <button class="btn btn-ghost" id="btnSecurity">&#128274; Security</button>
   <button class="btn btn-ghost" id="btnRestart" style="display:none">Start over</button>
@@ -321,8 +328,8 @@
       <option value="3">Signer 3</option>
       <option value="4">Signer 4</option>
     </select>
-    <button class="btn btn-ghost" id="btnLogo" style="margin-left:14px"
-            title="Subscribers can add their business logo as a letterhead at the top of the document.">&#127912; Add my logo</button>
+    <button class="btn btn-ghost tip" id="btnLogo" style="margin-left:14px"
+            data-tip="Add your business logo as a letterhead at the top of the document. It appears on every page and on the final signed PDF. Available with the $1/month subscription.">&#127912; Add my logo</button>
     <input type="file" id="logoInput" accept="image/png,image/jpeg,image/webp" style="display:none">
   </div>
   <div id="pages"></div>
@@ -562,6 +569,7 @@ window.addEventListener('DOMContentLoaded', function () {
     if (embedded.logo) state.logo = embedded.logo;
     document.body.classList.add('sign');
     var multi = state.signers.length > 1;
+    document.getElementById('modeBadge').style.display = 'inline-block';
     document.getElementById('modeBadge').textContent = multi
       ? 'Sign — you are signer ' + (state.signerIndex + 1) + ' of ' + state.signers.length
       : 'Sign';
