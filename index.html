@@ -528,6 +528,17 @@ async function callEsign(payload) {
   return data;
 }
 
+/* Anonymous usage tracker: fire-and-forget event ping (no PII, never blocks). */
+function trackEvent(ev) {
+  try {
+    fetch(ESIGN_ENDPOINT, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'track', event: ev })
+    }).catch(function () { /* no-op */ });
+  } catch (e) { /* no-op */ }
+}
+
 // Captured pristine source of this page, used to generate the signing file.
 var PRISTINE_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 
@@ -582,6 +593,13 @@ window.addEventListener('DOMContentLoaded', function () {
     renderPdf().then(updateProgress);
   } else {
     document.body.classList.add('prep');
+    // Tracker: count one visit per browser session (prep mode only, not signers).
+    try {
+      if (!sessionStorage.getItem('ssVisited')) {
+        sessionStorage.setItem('ssVisited', '1');
+        trackEvent('visit');
+      }
+    } catch (e) { /* no-op */ }
     setupUpload();
     // Subscribers: restore their saved logo letterhead.
     if (getEsignKey()) state.logo = localStorage.getItem('gohvioEsignLogo') || null;
@@ -590,6 +608,8 @@ window.addEventListener('DOMContentLoaded', function () {
   setupPalette();
   setupModal();
   document.getElementById('btnGenerate').addEventListener('click', generateSigningFile);
+  // Tracker: count signing-file downloads.
+  document.getElementById('btnGenerate').addEventListener('click', function () { trackEvent('file_download'); });
   document.getElementById('btnFinish').addEventListener('click', finishAndDownload);
   document.getElementById('btnRestart').addEventListener('click', function () { location.reload(); });
   document.getElementById('btnOpenSend').addEventListener('click', openSendModal);
